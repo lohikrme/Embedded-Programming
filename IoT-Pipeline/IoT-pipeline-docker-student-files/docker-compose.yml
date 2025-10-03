@@ -1,0 +1,207 @@
+# version: '3.9' -- obsolte now
+
+# Start containers
+#
+# start Node-red
+# $ docker compose up --force-recreate --build node-red -d
+#
+# start mosquitto
+# $ docker compose up --force-recreate --build mosquitto -d
+#
+# start telegraf
+# $ docker compose up --force-recreate --build telegraf -d
+#
+# start influxdb2
+# $ docker compose up --force-recreate --build influxdb2 -d
+#
+# start  grafana
+# $ docker compose up --force-recreate --build grafana -d
+# ```
+
+# This docker-compose file uses settings from a local .env file
+#
+# Example .env file
+# INFO_MSG=iots-project
+# COMPOSE_PROJECT_NAME=iots_2025
+# NODE_RED_PORT=1880
+# NODE_RED_PORT_IN_HOST=1880
+#
+# MQTT_SERVER_PORT=1883
+# MQTTs_SERVER_PORT=8883
+# MQTT_OVER_WS_SERVER_PORT=9001
+#
+# INFLUXDB2_PORT=8086
+#
+# INFLUXDB2_INIT_MODE=setup
+# INFLUXDB2_INIT_USERNAME=admin
+# INFLUXDB2_INIT_PASSWORD=Koodaus1
+# INFLUXDB2_INIT_ORG=IoTsOrg
+# INFLUXDB2_INIT_BUCKET=IoTsData
+# INFLUXDB2_INIT_ADMIN_TOKEN=supersecrettoken
+#
+# GRAFANA_PORT=3000
+#
+# Note! In influxdb2 heatcheck port 8086 is hardcoded
+
+name: ${COMPOSE_PROJECT_NAME}
+
+services:
+  # Node-Red
+  node-red:
+    # using context we can have args ect.
+    build:
+      context: ./defs/node-red
+
+    environment:
+      - HOSTNAME="Node-RED"
+      - TZ=Europe/Helsinki
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    ports:
+      # The Node-RED port default is 1880
+      - ${NODE_RED_PORT_IN_HOST}:${NODE_RED_PORT}
+
+    networks:
+      - iots_network
+
+    volumes:
+      # Mount for configuration
+      - iots_node_red_data:/data
+
+    restart: unless-stopped
+
+  # mosquitto server
+  mosquitto:
+    build: ./defs/mosquitto/
+
+    environment:
+      - HOSTNAME="Mosquitto"
+      - TZ=Europe/Helsinki
+
+    ports:
+      # The MQTT ports (1883/8883/9001)
+      - ${MQTT_SERVER_PORT}:${MQTT_SERVER_PORT}
+      - ${MQTTs_SERVER_PORT}:${MQTTs_SERVER_PORT}
+      - ${MQTT_OVER_WS_SERVER_PORT}:${MQTT_OVER_WS_SERVER_PORT}
+
+    networks:
+      - iots_network
+
+    volumes:
+      - iots_mosquitto_data:/mosquitto/data
+      - iots_mosquitto_log:/mosquitto/log
+      - iots_mosquitto_conf:/mosquitto/config
+
+    restart: unless-stopped
+
+  #   # depends_on:
+  #   #   - influxdb2
+
+  # # Telegraf
+  # telegraf:
+  #   # Full tag list: https://hub.docker.com/r/library/telegraf/tags/
+  #   build: ./defs/telegraf/
+
+  #   environment:
+  #     - HOSTNAME="telegraf"
+
+  #   networks:
+  #     - iots_network
+
+  #   volumes:
+  #     # Mount for telegraf configuration
+  #     - ./telegraf/:/etc/telegraf/
+  #     # Mount for Docker API access
+  #     - /var/run/docker.sock:/var/run/docker.sock
+
+  #   depends_on:
+  #     # - influxdb2
+  #     influxdb2:
+  #       condition: service_healthy
+
+  #   restart: unless-stopped
+
+  # # InfluxDB2
+  # influxdb2:
+  #   # Full tag list: https://hub.docker.com/r/library/influxdb/tags/
+  #   build: ./defs/influxdb2/
+
+  #   environment:
+  #     - HOSTNAME="influxdb2"
+
+  #     # to be used with auto-initialize
+  #     # - DOCKER_INFLUXDB2_INIT_MODE=setup
+  #     # - DOCKER_INFLUXDB2_INIT_USERNAME=admin
+  #     # - DOCKER_INFLUXDB2_INIT_PASSWORD=secret
+  #     # - DOCKER_INFLUXDB2_INIT_ORG=IoTsOrg
+  #     # - DOCKER_INFLUXDB2_INIT_BUCKET=IoTsData
+  #     # - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=supersecrettoken
+  #     - DOCKER_INFLUXDB2_INIT_MODE=${INFLUXDB2_INIT_MODE}
+  #     - DOCKER_INFLUXDB2_INIT_USERNAME=${INFLUXDB2_INIT_USERNAME}
+  #     - DOCKER_INFLUXDB2_INIT_PASSWORD=${INFLUXDB2_INIT_PASSWORD}
+  #     - DOCKER_INFLUXDB2_INIT_ORG=${INFLUXDB2_INIT_ORG}
+  #     - DOCKER_INFLUXDB2_INIT_BUCKET=${INFLUXDB2_INIT_BUCKET}
+  #     - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=${INFLUXDB2_INIT_ADMIN_TOKEN}
+
+  #   volumes:
+  #     # Mount for influxdb2 data and config directories
+  #     # - ./influxdb2/data:/var/lib/influxdb2
+  #     - iots_influxdb2_data:/var/lib/influxdb2
+  #     - ./influxdb2/config/:/etc/influxdb/
+
+  #   networks:
+  #     - iots_network
+
+  #   ports:
+  #     # The API for InfluxDB2 is served on port 8086
+  #     - ${INFLUXDB2_PORT}:${INFLUXDB2_PORT}
+
+  #   healthcheck:
+  #     # .env vars not supported (USE HARDCODED PORT HERE)
+  #     # test: ["CMD", "curl", "-f", "http://localhost:${INFLUXDB2_PORT}/health"]
+  #     test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  #   restart: unless-stopped
+
+  # grafana:
+  #   # using image instead of build
+  #   # build: ./defs/grafana/
+  #   image: grafana/grafana
+
+  #   environment:
+  #     - HOSTNAME="grafana"
+
+  #   ports:
+  #     # The GF web server runs on port 3000
+  #     - ${GRAFANA_PORT}:${GRAFANA_PORT}
+
+  #   networks:
+  #     - iots_network
+
+  #   volumes:
+  #     # Mount for configuration
+  #     - iots_grafana_storage:/var/lib/grafana
+
+  #   depends_on:
+  #     # - influxdb2
+  #     influxdb2:
+  #       condition: service_healthy
+
+  #   restart: unless-stopped
+
+networks:
+  iots_network:
+
+volumes:
+  iots_node_red_data:
+  iots_mosquitto_data:
+  iots_mosquitto_log:
+  iots_mosquitto_conf:
+  # iots_influxdb2_data:
+  # iots_grafana_storage:

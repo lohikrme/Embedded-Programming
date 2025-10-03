@@ -1,0 +1,35 @@
+# the idea of make file is to solve dependencies automatically
+# u can just run "make" command to run all these compile commands below
+# u can run "make clean" to remove what was created
+
+# macros make it much easier in large projects
+# refer to things with them
+
+# macros
+CC=g++
+FLAGS=-g
+EXE_NAME=main
+LINK_FLAGS=-lpthread
+RM=/bin/rm -f
+
+# default rule if nothing else command is defined for that block
+# compile all cpp files into o files according to dependencies written below
+# $< means basically same as *.cpp 
+.cpp.o:
+	${CC} ${FLAGS} -c $<
+
+# Build targets:
+all:	${EXE_NAME}
+
+# final executable
+# first line dependencies, second line commands
+main:	main.o addOne.o addTwo.o
+		${CC} ${FLAGS} ${LINK_FLAGS} -o ${EXE_NAME} main.o addOne.o addTwo.o
+		
+main.o: main.cpp addOne.h addTwo.h
+addOne.o: addOne.cpp addOne.h
+addTwo.o: addTwo.cpp addTwo.h
+
+# clean with force away all compiled (object files)
+clean: 
+	${RM} *.o main

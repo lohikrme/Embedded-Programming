@@ -1,0 +1,5 @@
+// addTwo.cpp
+
+int addTwo(int x) {
+    return x+2;
+}
