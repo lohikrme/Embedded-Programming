@@ -1,3 +1,5 @@
+# task 1: make a led that turns on pressing a button
+
 # notice that components need GROUNDING
 # for electricity to travel through them
 # there is data pins and ground pins used

@@ -1,9 +1,12 @@
+// main.c
+// write program to make a chart from fahrenheit to celsius
+
 #include <stdio.h>
 
 // print Fahrenheit-Celcius table
 // from 0 to 300
 
-main(int argc, char* argv[]) {
+int main() {
     float fahr, celsius;
     float lower, upper, step;
 
@@ -18,4 +21,6 @@ main(int argc, char* argv[]) {
         printf("%6.2f\t%6.2f\n", fahr, celsius);
         fahr = fahr + step;
     }
+    
+    return 0;
 }
