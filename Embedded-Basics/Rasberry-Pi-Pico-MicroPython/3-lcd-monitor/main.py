@@ -1,3 +1,6 @@
+# project link to wokwi:
+# https://wokwi.com/projects/444049405338768385
+
 # Download the lcd and pico_12c libraries from:
 # https://www.instructables.com/RPI-Pico-I2C-LCD-Control/
 # https://github.com/T-622/RPI-PICO-I2C-LCD
@@ -5,6 +8,10 @@
 # other useful information:
 # https://docs.micropython.org/en/latest/library/machine.I2C.html
 # https://docs.wokwi.com/parts/wokwi-lcd1602
+
+# components:
+# rasberry pi pico wifi
+# LCD 16x2 (I2C)
 
 import time
 import machine
