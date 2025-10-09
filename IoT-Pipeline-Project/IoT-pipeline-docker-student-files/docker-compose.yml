@@ -125,39 +125,39 @@ services:
   #   restart: unless-stopped
 
   # # InfluxDB2
-  # influxdb2:
-  #   # Full tag list: https://hub.docker.com/r/library/influxdb/tags/
-  #   build: ./defs/influxdb2/
+  influxdb2:
+    # Full tag list: https://hub.docker.com/r/library/influxdb/tags/
+    build: ./defs/influxdb2/
 
-  #   environment:
-  #     - HOSTNAME="influxdb2"
+    environment:
+      - HOSTNAME="influxdb2"
 
-  #     # to be used with auto-initialize
-  #     # - DOCKER_INFLUXDB2_INIT_MODE=setup
-  #     # - DOCKER_INFLUXDB2_INIT_USERNAME=admin
-  #     # - DOCKER_INFLUXDB2_INIT_PASSWORD=secret
-  #     # - DOCKER_INFLUXDB2_INIT_ORG=IoTsOrg
-  #     # - DOCKER_INFLUXDB2_INIT_BUCKET=IoTsData
-  #     # - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=supersecrettoken
-  #     - DOCKER_INFLUXDB2_INIT_MODE=${INFLUXDB2_INIT_MODE}
-  #     - DOCKER_INFLUXDB2_INIT_USERNAME=${INFLUXDB2_INIT_USERNAME}
-  #     - DOCKER_INFLUXDB2_INIT_PASSWORD=${INFLUXDB2_INIT_PASSWORD}
-  #     - DOCKER_INFLUXDB2_INIT_ORG=${INFLUXDB2_INIT_ORG}
-  #     - DOCKER_INFLUXDB2_INIT_BUCKET=${INFLUXDB2_INIT_BUCKET}
-  #     - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=${INFLUXDB2_INIT_ADMIN_TOKEN}
+      # to be used with auto-initialize
+      # - DOCKER_INFLUXDB2_INIT_MODE=setup
+      # - DOCKER_INFLUXDB2_INIT_USERNAME=admin
+      # - DOCKER_INFLUXDB2_INIT_PASSWORD=secret
+      # - DOCKER_INFLUXDB2_INIT_ORG=IoTsOrg
+      # - DOCKER_INFLUXDB2_INIT_BUCKET=IoTsData
+      # - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=supersecrettoken
+      - DOCKER_INFLUXDB2_INIT_MODE=${INFLUXDB2_INIT_MODE}
+      - DOCKER_INFLUXDB2_INIT_USERNAME=${INFLUXDB2_INIT_USERNAME}
+      - DOCKER_INFLUXDB2_INIT_PASSWORD=${INFLUXDB2_INIT_PASSWORD}
+      - DOCKER_INFLUXDB2_INIT_ORG=${INFLUXDB2_INIT_ORG}
+      - DOCKER_INFLUXDB2_INIT_BUCKET=${INFLUXDB2_INIT_BUCKET}
+      - DOCKER_INFLUXDB2_INIT_ADMIN_TOKEN=${INFLUXDB2_INIT_ADMIN_TOKEN}
 
-  #   volumes:
-  #     # Mount for influxdb2 data and config directories
-  #     # - ./influxdb2/data:/var/lib/influxdb2
-  #     - iots_influxdb2_data:/var/lib/influxdb2
-  #     - ./influxdb2/config/:/etc/influxdb/
+    volumes:
+      # Mount for influxdb2 data and config directories
+      # - ./influxdb2/data:/var/lib/influxdb2
+      - iots_influxdb2_data:/var/lib/influxdb2
+      - ./influxdb2/config/:/etc/influxdb/
 
-  #   networks:
-  #     - iots_network
+    networks:
+      - iots_network
 
-  #   ports:
-  #     # The API for InfluxDB2 is served on port 8086
-  #     - ${INFLUXDB2_PORT}:${INFLUXDB2_PORT}
+    ports:
+      # The API for InfluxDB2 is served on port 8086
+      - ${INFLUXDB2_PORT}:${INFLUXDB2_PORT}
 
   #   healthcheck:
   #     # .env vars not supported (USE HARDCODED PORT HERE)
@@ -203,5 +203,5 @@ volumes:
   iots_mosquitto_data:
   iots_mosquitto_log:
   iots_mosquitto_conf:
-  # iots_influxdb2_data:
+  iots_influxdb2_data:
   # iots_grafana_storage:

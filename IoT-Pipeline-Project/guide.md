@@ -20,3 +20,12 @@ on one of the windows run command so subscribe, on other to publish
     to publish aka send mqtt message:
 -   mosquitto_pub -h mosquitto -t "iots_2025/TT10/kitchen" -m '{"address": "TT10", "loc":"kitchen","
     device":"iots_2025_node_red_conteiner", "temperature":32, "pressure":945 , "humidity":84}'
+
+## INFLUX Credentials
+
+-   Username: lohikrme
+-   Salasana: Koodaus1
+-   Organisaatio: Lab University
+-   Bucket name: iots_2025s_test_data
+-   Token:
+    <p>vS0HVFGmuus2bTK1HwvYBwBiBzTyCvCaSsmzJbBTk2IZJsRiacPEScUFfUxttU1UP0jPMIV3l7jOdyGjOkggUg==<p>
