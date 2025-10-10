@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>simple websocket exercise</title>
+    </head>
+    <body>
+        <h1>WebSocket exercise</h1>
+        <input id="message" />
+        <button onClick="clickSendButton()">Send</button>
+        <div id="log"></div>
+    </body>
+    <script>
+        // create a new client side websocket
+        const socket = new WebSocket('ws://localhost:8000');
+        // handle connection, onopen gets an arrow function as an event handler
+        // basically it means that, when onopen == true, then function given will activate
+        socket.onopen = () => {
+            document.getElementById('log').innerText += 'Connected to server\n';
+        };
+        // handle coming messages, onmessage gets an arrow function as an event handler
+        socket.onmessage = (event) => {
+            document.getElementById('log').innerText += 'Server: ' + event.data + '\n';
+        };
+
+        function clickSendButton() {
+            const message = document.getElementById('message').value;
+            socket.send(message);
+        }
+    </script>
+</html>

@@ -1,0 +1,1 @@
+npm install ws # needed for web sockets in js
