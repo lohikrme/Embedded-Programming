@@ -1,4 +1,4 @@
-// task 5: print the longest line from input
+// task 5 a: print the longest line from input
 
 #include <stdio.h>
 
