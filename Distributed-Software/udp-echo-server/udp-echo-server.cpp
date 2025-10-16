@@ -27,10 +27,14 @@ typedef struct _config {
     int delay_in_secs;
 } Config_t;
 
+// global variables
+static int sockid = -1;
+
 // function prototypes mean order of writing functions doesn't matter
 void GetCmdLineOptions( int argc, char *argv[], Config_t *pconfig);
-int main(int argc, char *argv[]);
 void InterruptionHandler(int sig);
+int main(int argc, char *argv[]);
+
 //------------------------------------------------------------------------
 
 // GetCmdLineOptions() is a function, that reads given extra tags after calling the main software
@@ -70,6 +74,10 @@ void InterruptionHandler(int sig) {
     letter = getchar();
     if(toupper(letter)=='Y') {
         // todo: close socket
+        if (sockid >= 0) {
+            close(sockid);
+            sockid = -1;
+        }
         exit(0);
     } 
     // if user writes something else than "y"
@@ -85,8 +93,8 @@ int main(int argc, char *argv[]) {
     // make a variable called config that is type of Config_t
     Config_t config;
     // save socket id into a variable, when socket is created, OS gives it a number
-    int sockid, len, n, msg_cnt;
-    sockid = len = n = msg_cnt = 0;
+    int len, n, msg_cnt;
+    len = n = msg_cnt = 0;
     char in_buf[MAXSIZE+4];
     char out_buf[MAXSIZE+32];
 
@@ -165,7 +173,11 @@ int main(int argc, char *argv[]) {
     }
 
     // after done useful stuff with socket, close it
-    close(sockid);
+    if (sockid > 0) {
+        close(sockid);
+        sockid = -1;
+    }
+    
     return 0;
 }
 

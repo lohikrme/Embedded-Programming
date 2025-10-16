@@ -21,6 +21,20 @@ on one of the windows run command so subscribe, on other to publish
 -   mosquitto_pub -h mosquitto -t "iots_2025/TT10/kitchen" -m '{"address": "TT10", "loc":"kitchen","
     device":"iots_2025_node_red_conteiner", "temperature":32, "pressure":945 , "humidity":84}'
 
+-   When nodered generates data, it has next contents:
+-   const org = 'iots_2025';
+-   const addr = 'Heinola';
+-   const loc = 'Forest_SE2';
+-   let device = 'Pico1';
+
+So when you need to use MQTT to send data to telegraf, use next form:
+
+-   "iots_2025/Heinola/Forest_SE2"
+
+To see inside mosquitto container, does mqtt receive data from nodered, use:
+
+-   mosquitto_sub -h localhost -t "iots_2025/Heinola/Forest_SE2"
+
 ## INFLUX Credentials
 
 -   Username: lohikrme

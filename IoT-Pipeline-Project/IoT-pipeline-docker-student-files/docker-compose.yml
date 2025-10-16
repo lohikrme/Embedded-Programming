@@ -100,22 +100,22 @@ services:
   #   # depends_on:
   #   #   - influxdb2
 
-  # # Telegraf
-  # telegraf:
-  #   # Full tag list: https://hub.docker.com/r/library/telegraf/tags/
-  #   build: ./defs/telegraf/
+  # Telegraf
+  telegraf:
+    # Full tag list: https://hub.docker.com/r/library/telegraf/tags/
+    build: ./defs/telegraf/
 
-  #   environment:
-  #     - HOSTNAME="telegraf"
+    environment:
+      - HOSTNAME="telegraf"
 
-  #   networks:
-  #     - iots_network
+    networks:
+      - iots_network
 
-  #   volumes:
-  #     # Mount for telegraf configuration
-  #     - ./telegraf/:/etc/telegraf/
-  #     # Mount for Docker API access
-  #     - /var/run/docker.sock:/var/run/docker.sock
+    volumes:
+      # Mount for telegraf configuration
+      - ./telegraf/:/etc/telegraf/
+      # Mount for Docker API access
+      - /var/run/docker.sock:/var/run/docker.sock
 
   #   depends_on:
   #     # - influxdb2
