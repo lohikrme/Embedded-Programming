@@ -1,0 +1,177 @@
+# IMPORTANT: CHANGE MOUNT BINDS AND PROTS IN ENV FILE AS NEEDED
+
+# Start containers
+#
+# start makefile service
+# $ docker compose --profile makefile up --force-recreate --build -d
+#
+# start all udp services
+# $ docker compose --profile udp up --force-recreate --build -d
+#
+# start udp client (example of turning on a specific service within profile)
+# $ docker compose --profile udp up --force-recreate --build -d udp_client
+#
+# start all tcp services
+# $ docker compose --profile tcp up --force-recreate --build -d
+#
+# start all services at once
+# $ docker compose --profile all up --force-recreate --build -d
+
+services:
+  #-----------------------------------------------------------------------------
+  # MAKEFILE ASSIGNMENT CONTAINER
+  makefile:
+    profiles: ["makefile", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_server/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    environment:
+      RUN_IN_CONTAINER: "YES"
+      SERVER_PORT_2_LISTEN: ${MAKEFILE_PORT}
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_MAKEFILE}:/usr/src/c-projects
+
+    # testing the connections from HostOS
+    ports:
+      - ${TESTING_MAKEFILE_PORT}:${MAKEFILE_PORT}
+
+  #-----------------------------------------------------------------------------
+  # UDP ECHO SERVER
+  udp_server:
+    profiles: ["udp", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_server/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    environment:
+      RUN_IN_CONTAINER: "YES"
+      SERVER_PORT_2_LISTEN: ${SERVER_PORT_UDP}
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_UDP_SERVER}:/usr/src/c-projects
+
+    # testing the connections from HostOS
+    ports:
+      - ${TESTING_PORT_UDP_SERVER}:${SERVER_PORT_UDP}
+
+  #-----------------------------------------------------------------------------
+  # UDP ECHO CLIENT
+  udp_client:
+    profiles: ["udp", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_client/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    environment:
+      RUN_IN_CONTAINER: "YES"
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_UDP_CLIENT}:/usr/src/c-projects
+
+  #-----------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
+  # TCP ECHO SERVER
+  tcp_server:
+    profiles: ["tcp", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_server/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    environment:
+      RUN_IN_CONTAINER: "YES"
+      SERVER_PORT_2_LISTEN: ${SERVER_PORT_TCP}
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_TCP_SERVER}:/usr/src/c-projects
+
+    # testing the connections from HostOS
+    ports:
+      - ${TESTING_PORT_TCP_SERVER}:${SERVER_PORT_TCP}
+
+  #-----------------------------------------------------------------------------
+  # TCP ECHO CLIENT
+  tcp_client:
+    profiles: ["tcp", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_client/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    environment:
+      RUN_IN_CONTAINER: "YES"
+      CLIENT_SHOULD_LISTEN: "YES"
+      CLIENT_PORT_TCP: ${CLIENT_PORT_TCP}
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_TCP_CLIENT}:/usr/src/c-projects
+
+    ports:
+      - ${TESTING_PORT_TCP_CLIENT}:${CLIENT_PORT_TCP}
+
+networks:
+  c-lang-network:
+# NOTE on network communication:
+# One can use following to inspect the ips inside the container:
+# $ docker network inspect dockerdevelopment_c-lang-network
+#
+# (Command issued in the host os)
+#
+# This command shows the ips of the connected containers.
+# To run an app which needs communication between containers,
+# one can use the ips shown.
+#
+# Server listening with following will work:
+# - servaddr.sin_addr.s_addr =  inet_addr("0.0.0.0"); OR
+# - servaddr.sin_addr.s_addr = INADDR_ANY;
+#
+# Note! inet_addr("127.0.0.1") will not work on docker networks!
+#
+# Container names, ips ect: https://9to5answer.com/docker-compose-container-ip-address-with-container-name
+

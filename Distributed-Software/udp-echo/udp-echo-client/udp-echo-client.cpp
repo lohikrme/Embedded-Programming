@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <HalloweenWitch2.h>
 
 
 #define DEFAULT_SERVER_PORT 8080
