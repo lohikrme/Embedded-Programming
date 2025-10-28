@@ -38,7 +38,8 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     unzip \
     libssl-dev \
     pkg-config \
-    ca-certificates
+    ca-certificates \
+    libcjson-dev
 
 # Install cmake from binaries -- replaced with repo version (included in 24.04)
 # RUN apt-get update && \

@@ -1,6 +1,6 @@
 # About the course
 
-Distributed software course tries to teach how udp and tcp sockets and mqtt protocol work. Idea is to stay slightly on the realm of embedded programming, so more like process communicating to another process on linux etc, rather than something done purely between web servers. The language will be C++.
+Distributed software course tries to teach how udp and tcp sockets and mqtt protocol work. Idea is to stay slightly on the realm of embedded programming, so more like process communicating to another process on linux etc, rather than something done purely between web servers. The language will be C or C++.
 
 The tasks during the course split to next topics:
 
@@ -11,15 +11,32 @@ The tasks during the course split to next topics:
 
 ## Task 1: Makefile assignment
 
+### Basic idea
+
+The code is very simple itself. The main point of assignment is the makefile, that shows example how to professionally (in linux environment) compile C++ code from multiple files.
+
 ### Docker containers
 
 Create one docker container from dockerfiles / docker-compose.yaml, with profile "makefile". It is based on "server" dockerfile, though in reality it does not need all the packets server container has, server file installs for example the make software to compile C++.
 
-### Main Points
-
-The code is very simple itself. The main point of assignment is the makefile, that shows example how to professionally (in linux environment) compile C++ code from multiple files.
-
 ## Task 2: UDP Echo
+
+### Basic idea and architecture
+
+Udp server will store data received from client.
+
+Files will be stored into "data" folder with same name as client sent. Large files will be accumulated from multiple data packets.
+
+Messages will be stored into "messages.txt" file with a timestamp.
+
+Data will be sent in JSON form, because that allows knowing type of data, possible filename and also content. The json will have next fields:
+
+-   type: "file" || "message"
+-   filename: "example.txt"
+-   content: "Hello world!"
+-   append: 1 || 0
+
+With these informations we will know, if we are going to replace old obsolete file totally, or if we are just going to append to existing file.
 
 ### Docker containers
 
@@ -36,10 +53,10 @@ The code is made to run on Linux. It means that it has some errors on Windows. T
 
 -   'docker exec -it <container_name> /bin/bash'
 
-And run next commands:
+And run next commands (notice we link cjson library):
 
--   Server: g++ -std=c++14 udp-echo-server.cpp -o server
--   Client: g++ -std=c++14 udp-echo-client.cpp -o client
+-   Server: gcc -g udp-echo-server.c -o server -lcjson
+-   Client: gcc -g udp-echo-client.c -o client -lcjson
 
 ### Starting the udp server
 

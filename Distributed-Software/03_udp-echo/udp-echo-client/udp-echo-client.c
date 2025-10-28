@@ -39,13 +39,16 @@
 typedef struct _config {
     char *host;
     char *message;
+    char *filename;
     int port;
     int timeout;
+    int is_file;
 } Config_t;
 
 // function prototypes mean order of writing functions doesn't matter
 void GetCmdLineOptions( int argc, char *argv[], Config_t *pconfig);
 int main(int argc, char *argv[]);
+char* EscapeJSONString(const char* input);
 //------------------------------------------------------------------------
 
 // GetCmdLineOptions() is a function, that reads given extra tags after calling the main software
@@ -65,6 +68,7 @@ void GetCmdLineOptions( int argc, char *argv[], Config_t* pconfig) {
                 pconfig->port = atoi(optarg);
                 break;
             case 'm':
+                //----------------------------
                 // FILE DATA
                 if (optarg[0] == '@') {
                     // skip '@' so filepath is functional
@@ -92,10 +96,19 @@ void GetCmdLineOptions( int argc, char *argv[], Config_t* pconfig) {
                 size_t read = fread(pconfig->message, 1, filesize, fp);
                 // add \0 to end of file to computers know string ends
                 pconfig->message[read] = '\0';
+                fclose(fp);
+                // deep copy a string with strdup
+                const char* filename = filepath + 7;
+                pconfig->filename = strdup(filename);
+                pconfig->is_file = 1;
+
                 }
+                //----------------------------
                 // PLAIN MESSAGE DATA
                 else {
                     pconfig-> message = optarg;
+                    pconfig->filename = NULL;
+                    pconfig->is_file = 0;
                 }
                 break;
             case 't':
@@ -181,12 +194,30 @@ int main(int argc, char *argv[]) {
         perror("Error in setting the timeout for recvfrom!");
     }
 
-    // just send an array of characters (string) to server, server handles \0 etc
+    // 1. Build a json message
+    char json_buf[MAXSIZE];
+    char* escaped = EscapeJSONString(config.message);
+
+    if (config.is_file) {
+        snprintf(json_buf, sizeof(json_buf),
+            "{ \"type\": \"file\", \"filename\": \"%s\", \"content\": \"%s\", \"append\": true }",
+            config.filename, escaped);
+    } else {
+        snprintf(json_buf, sizeof(json_buf),
+            "{ \"type\": \"message\", \"content\": \"%s\" }",
+            escaped);
+    }
+
+    free(escaped); // vapautetaan muisti
+
+    // 2. send json server, no need to add 0/ here
+    printf("Lähetettävä JSON:\n%s\n", json_buf);
     sendto(
         sockid, 
-        config.message, 
-        strlen(config.message), 
-        MSG_CONFIRM, (struct sockaddr*) &serveraddr, 
+        json_buf,
+        strlen(json_buf), 
+        MSG_CONFIRM, 
+        (struct sockaddr*) &serveraddr, 
         sizeof(serveraddr)
     );
     printf("Message: \n\n\n'%s' \n\n\n has been sent to %s:%d\n", config.message, config.host, config.port);
@@ -203,4 +234,23 @@ int main(int argc, char *argv[]) {
     printf("\n\n\nServer returned: %s\n", in_buf);
     close(sockid);
     return 0;
+}
+
+char* EscapeJSONString(const char* input) {
+    size_t len = strlen(input);
+    char* output = malloc(len * 2 + 1); // varaa reilusti tilaa
+    char* p = output;
+
+    for (size_t i = 0; i < len; i++) {
+        switch (input[i]) {
+            case '\"': *p++ = '\\'; *p++ = '\"'; break;
+            case '\\': *p++ = '\\'; *p++ = '\\'; break;
+            case '\n': *p++ = '\\'; *p++ = 'n'; break;
+            case '\r': *p++ = '\\'; *p++ = 'r'; break;
+            case '\t': *p++ = '\\'; *p++ = 't'; break;
+            default: *p++ = input[i]; break;
+        }
+    }
+    *p = '\0';
+    return output;
 }

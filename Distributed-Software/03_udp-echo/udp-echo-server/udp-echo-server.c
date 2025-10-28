@@ -15,6 +15,9 @@ $ g++ -std=c++14 udp-echo-server.cpp -o udp-echo-server
 #include <sys/socket.h> // contain struct sockaddr % sockid = socket(AF_INET, SOCK_DGRAM, 0)
 #include <arpa/inet.h> // contain inet_pton, inet_ntoa, etc
 #include <netinet/in.h> // contain sockaddr_in and IP-addresses
+#include <cjson/cJSON.h> // supports json files in pure C
+#include <sys/stat.h> // mkdir
+#include <time.h>
 
 
 #define DEFAULT_SERVER_PORT 8080
@@ -31,8 +34,10 @@ typedef struct _config {
 static int sockid = -1;
 
 // function prototypes mean order of writing functions doesn't matter
+void SaveToFile(const char* client_id, const char* filename, const char* content, int append);
 void GetCmdLineOptions( int argc, char *argv[], Config_t *pconfig);
 void InterruptionHandler(int sig);
+void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr);
 int main(int argc, char *argv[]);
 
 //------------------------------------------------------------------------
@@ -92,6 +97,8 @@ void InterruptionHandler(int sig) {
 int main(int argc, char *argv[]) {
     // make a variable called config that is type of Config_t
     Config_t config;
+    config.port=12700;
+    config.delay_in_secs=1;
     // save socket id into a variable, when socket is created, OS gives it a number
     int len, n, msg_cnt;
     len = n = msg_cnt = 0;
@@ -150,27 +157,32 @@ int main(int argc, char *argv[]) {
         // make sure string ends to the null
         in_buf[n] = '\0';
         msg_cnt++;
-        printf("Client req (%d) received from %s using port %u: %s...", 
+        printf("Client req (%d) received data from %s:%u\n", 
             msg_cnt, 
-            // inet_ntoa transforms binary IP to human IP
             inet_ntoa(clientaddr.sin_addr),
-            clientaddr.sin_port,
-            in_buf
+            clientaddr.sin_port
         );
-        // fprintf(file_fp, "", ...)
-        // printf() = fprintf(stdout, "", ...)
-        // use sprintf to print straight into a buffer or file
-        // 9 letters + digit so +20 maxsize for out_buf enough to prevent overflow
+
+        // Handle data
+        HandleIncoming(in_buf, &clientaddr);
+
 
         // add additional delay to response
         if (config.delay_in_secs) {
             sleep(config.delay_in_secs);
         }
         // saves text into a string with sprintf into out_buf memory
-        sprintf(out_buf, "Echo [%d]: %s", msg_cnt, in_buf);
+        sprintf(out_buf, "UDP Server received data. Packet number: [%d]", msg_cnt);
 
         // next step is decide flag where message goes
-        sendto(sockid, out_buf, strlen(out_buf), MSG_CONFIRM, (struct sockaddr*)&clientaddr, len);
+        sendto(
+            sockid, 
+            out_buf, 
+            strlen(out_buf), 
+            MSG_CONFIRM, 
+            (struct sockaddr*)&clientaddr, 
+            len
+        );
         printf("reply sent\n");
     }
 
@@ -184,3 +196,87 @@ int main(int argc, char *argv[]) {
 }
 
 
+void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr) {
+    cJSON* root = cJSON_Parse(in_buf);
+    if (!root) {
+        printf("Faulty JSON file\n");
+        return;
+    }
+
+    cJSON* type = cJSON_GetObjectItem(root, "type");
+    cJSON* content = cJSON_GetObjectItem(root, "content");
+
+    if (!type || !content || !cJSON_IsString(type) || !cJSON_IsString(content)) {
+        printf("Missing or faulty fields in JSON\n");
+        cJSON_Delete(root);
+        return;
+    }
+
+    // create a client_id
+    char client_id[128];
+    snprintf(client_id, sizeof(client_id), "%s_%d", inet_ntoa(clientaddr->sin_addr), clientaddr->sin_port);
+
+    if (strcmp(type->valuestring, "message") == 0) {
+        // Write into log file
+        FILE* fp = fopen("log.txt", "a");
+        if (fp) {
+
+            // add the timestamp
+            time_t now = time(NULL);
+            struct tm* t = localtime(&now);
+            char timestamp[64];
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
+
+            fprintf(fp, "[%s] [%s] %s\n", timestamp, client_id, content->valuestring);
+            fclose(fp);
+            printf("Message saved into log.txt file\n");
+        } else {
+            perror("Failed writing a log file");
+        }
+    } else if (strcmp(type->valuestring, "file") == 0) {
+        cJSON* filename = cJSON_GetObjectItem(root, "filename");
+        cJSON* append = cJSON_GetObjectItem(root, "append");
+
+        if (!filename || !cJSON_IsString(filename)) {
+            printf("Missing or faulty file name! \n");
+            cJSON_Delete(root);
+            return;
+        }
+
+        int append_mode = (append && cJSON_IsBool(append)) ? cJSON_IsTrue(append) : 1;
+
+        SaveToFile(client_id, filename->valuestring, content->valuestring, append_mode);
+    } else {
+        printf("Unknown message type: %s\n", type->valuestring);
+    }
+
+    cJSON_Delete(root);
+}
+
+
+void SaveToFile(const char* client_id, const char* filename, const char* content, int append) {
+    // Create root folder 'data' if need
+    mkdir("data", 0777);
+
+    // Create an own folder for each client, where client is known by ip_port as their id
+    char folder[256];
+    snprintf(folder, sizeof(folder), "data/%s", client_id);
+    mkdir(folder, 0777);
+
+    // Create a filepath
+    char filepath[512];
+    snprintf(filepath, sizeof(filepath), "%s/%s", folder, filename);
+
+    // Select is mode is append or clean and write new
+    const char* mode = append ? "a" : "w";
+
+    // write into the file
+    FILE* fp = fopen(filepath, mode);
+    if (fp) {
+        fwrite(content, 1, strlen(content), fp);
+        fclose(fp);
+        printf("Saved into the file: %s\n", filepath);
+    } else {
+        perror("Writing file failed...\n");
+    }
+}
