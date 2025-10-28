@@ -11,10 +11,10 @@ $ g++ -std=c++14 udp-echo-server.cpp -o udp-echo-server
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <sys/types.h> // socket.h relies on this
+#include <sys/socket.h> // contain struct sockaddr % sockid = socket(AF_INET, SOCK_DGRAM, 0)
+#include <arpa/inet.h> // contain inet_pton, inet_ntoa, etc
+#include <netinet/in.h> // contain sockaddr_in and IP-addresses
 
 
 #define DEFAULT_SERVER_PORT 8080
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     GetCmdLineOptions(argc, argv, &config);
 
     // now that we know what port we listen to (default or user input), we tell user we listen the port
-    printf("udp-echo-server listening to port %d...\n Press CTRL+X to stop\n", config.port);
+    printf("udp-echo-server listening to port %d...\n Press CTRL+C to stop\n", config.port);
 
     // start listening for Interruption signal and deliver those to InterruptionHandler
     signal(SIGINT, InterruptionHandler);
@@ -134,16 +134,16 @@ int main(int argc, char *argv[]) {
     serveraddr.sin_port = htons(config.port);
 
     // make serveraddr_in to serveraddr type before bind
-    if(bind(sockid, (const sockaddr*) &serveraddr, sizeof(serveraddr)) < 0) {
+    if(bind(sockid, (struct sockaddr*) &serveraddr, sizeof(serveraddr)) < 0) {
         perror("Socket bind failed!");
         exit(EXIT_FAILURE);
     }
 
     len = sizeof(clientaddr);
     // while loop keeps the server running
-    while(true) {
+    while(1) {
         // use in_buf array as memory location to receive data
-        if((n = recvfrom(sockid, in_buf, MAXSIZE-1, MSG_WAITALL, (sockaddr*) &clientaddr, (socklen_t*)&len)) < 0) {
+        if((n = recvfrom(sockid, in_buf, MAXSIZE-1, MSG_WAITALL, (struct sockaddr*) &clientaddr, (socklen_t*)&len)) < 0) {
             perror("recvfrom failed");
             exit(EXIT_FAILURE);
         }
@@ -152,6 +152,7 @@ int main(int argc, char *argv[]) {
         msg_cnt++;
         printf("Client req (%d) received from %s using port %u: %s...", 
             msg_cnt, 
+            // inet_ntoa transforms binary IP to human IP
             inet_ntoa(clientaddr.sin_addr),
             clientaddr.sin_port,
             in_buf
@@ -165,10 +166,11 @@ int main(int argc, char *argv[]) {
         if (config.delay_in_secs) {
             sleep(config.delay_in_secs);
         }
+        // saves text into a string with sprintf into out_buf memory
         sprintf(out_buf, "Echo [%d]: %s", msg_cnt, in_buf);
 
         // next step is decide flag where message goes
-        sendto(sockid, out_buf, strlen(out_buf), MSG_CONFIRM, (const sockaddr*)&clientaddr, len);
+        sendto(sockid, out_buf, strlen(out_buf), MSG_CONFIRM, (struct sockaddr*)&clientaddr, len);
         printf("reply sent\n");
     }
 

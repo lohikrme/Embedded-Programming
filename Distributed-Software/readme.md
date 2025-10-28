@@ -38,8 +38,8 @@ The code is made to run on Linux. It means that it has some errors on Windows. T
 
 And run next commands:
 
--Server: g++ -std=c++14 udp-echo-server.cpp -o udp-echo-server
--Client: g++ -std=c++14 udp-echo-client.cpp -o udp-echo-client
+-   Server: g++ -std=c++14 udp-echo-server.cpp -o server
+-   Client: g++ -std=c++14 udp-echo-client.cpp -o client
 
 ### Starting the udp server
 
@@ -52,9 +52,9 @@ To turn on the server, it allows parameters:
 
 Idea is that, we can artificially induce some delay, so we can try out delay-situations that could happen in a real distributed system. Perhaps client has a timeout after a few seconds or something.
 
-The parameters are not mandatory for the server, so it can just be turned on, and it will then use default values (port 8080 and delay 0 seconds). But to use parameters, he is example:
+The parameters are not mandatory for the server, so it can just be turned on, and it will then use default values (port 8080 and delay 0 seconds). Example use:
 
--   ./udp-echo-server -p 12700 -d 5
+-   ./server -p 12700 -d 5
 
 ### Using the udp client
 
@@ -62,5 +62,10 @@ To use the client, it can simply be turned on inside the command prompt (docker 
 
 -   -h = '(host's/server's) ip address to send messages'
 -   -p = '(host's/server's) port to send messages'
--   -m = 'Content of the message, max 1000 bytes.
+-   -m = 'Content of the message, max 1000 bytes. If put @ at the beginning, it is a link to text file.
 -   -t = 'Timeout and after time has passed assume udp packet is lost.
+
+Example use (remember, you can use docker inspect <container_name> to find out an ip address of server)
+
+-   ./client -h 172.20.0.2 -p 12700 -m "Halloween is the greatest celebration of year!" -t 5
+-   ./client -h 172.20.0.3 -p 12700 -m "@./data/lotr-story.txt" -t 5

@@ -10,20 +10,21 @@
 // -h = host ip address, -p = port, -m = message
 // ./udp-echo-client -h ip -p 12700 -m "message"
 
+// IMPORTANT: optarg is a global variable used in C command prompt softwares
 
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <HalloweenWitch2.h>
+//#include <HalloweenWitch2.h>
 
 
 #define DEFAULT_SERVER_PORT 8080
@@ -36,10 +37,10 @@
 
 // typedef allows defining own type
 typedef struct _config {
-    char *host = NULL;
-    char *message = NULL;
+    char *host;
+    char *message;
     int port;
-    int timeout = 10;
+    int timeout;
 } Config_t;
 
 // function prototypes mean order of writing functions doesn't matter
@@ -64,7 +65,38 @@ void GetCmdLineOptions( int argc, char *argv[], Config_t* pconfig) {
                 pconfig->port = atoi(optarg);
                 break;
             case 'm':
-                pconfig-> message = optarg;
+                // FILE DATA
+                if (optarg[0] == '@') {
+                    // skip '@' so filepath is functional
+                    const char* filepath = optarg + 1;
+                    FILE *fp = fopen(filepath, "r");
+                    // file is not found
+                    if (fp == NULL) {
+                        perror("Failed to open file");
+                        exit(EXIT_FAILURE);
+                    }
+                    // find out the size of file, and then go to beginning of file
+                    fseek(fp, 0, SEEK_END);
+                    long filesize = ftell(fp);
+                    rewind(fp);
+
+                // allocate memory for content of file
+                pconfig->message = malloc(filesize + 1);
+                if (!pconfig->message) {
+                    perror("malloc to store file content failed");
+                    fclose(fp);
+                    exit(EXIT_FAILURE);
+                }
+                
+                // read whole file content into pconfig.message:
+                size_t read = fread(pconfig->message, 1, filesize, fp);
+                // add \0 to end of file to computers know string ends
+                pconfig->message[read] = '\0';
+                }
+                // PLAIN MESSAGE DATA
+                else {
+                    pconfig-> message = optarg;
+                }
                 break;
             case 't':
                 pconfig -> timeout = atoi(optarg);
@@ -82,7 +114,13 @@ void GetCmdLineOptions( int argc, char *argv[], Config_t* pconfig) {
 
 int main(int argc, char *argv[]) {
     // make a variable called config that is type of Config_t
+    // also make default values
     Config_t config;
+    config.host = "127.20.0.2";
+    config.message = "Hello world!";
+    config.port = 12000;
+    config.timeout = 10;
+
     // save socket id into a variable, when socket is created, OS gives it a number
     int sockid, len, n;
     sockid = len = n = 0;
@@ -148,12 +186,12 @@ int main(int argc, char *argv[]) {
         sockid, 
         config.message, 
         strlen(config.message), 
-        MSG_CONFIRM, (const sockaddr*) &serveraddr, 
+        MSG_CONFIRM, (struct sockaddr*) &serveraddr, 
         sizeof(serveraddr)
     );
-    printf("Messageto %s:%d sent %s", config.host, config.port, config.message);
+    printf("Message: \n\n\n'%s' \n\n\n has been sent to %s:%d\n", config.message, config.host, config.port);
 
-    if((n = recvfrom(sockid, in_buf, MAXSIZE-1, MSG_WAITALL, (sockaddr*) &serveraddr, (socklen_t *) &len)) < 0) {
+    if((n = recvfrom(sockid, in_buf, MAXSIZE-1, MSG_WAITALL, (struct sockaddr*) &serveraddr, (socklen_t *) &len)) < 0) {
         perror("recvfrom failed");
         exit(EXIT_FAILURE);
     }
@@ -162,7 +200,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     in_buf[n] = '\0';
-    printf("Server returned: %s\n", in_buf);
+    printf("\n\n\nServer returned: %s\n", in_buf);
     close(sockid);
     return 0;
 }
