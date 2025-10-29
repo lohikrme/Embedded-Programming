@@ -29,6 +29,7 @@
 
 #define DEFAULT_SERVER_PORT 8080
 #define MAXSIZE 1000+32
+#define CLIENT_ID "client_halloweenWitch"
 
 // decide do u make software for linux or windows
 // u can also give them in compiling with tag -D e.g -D LINUX
@@ -200,12 +201,12 @@ int main(int argc, char *argv[]) {
 
     if (config.is_file) {
         snprintf(json_buf, sizeof(json_buf),
-            "{ \"type\": \"file\", \"filename\": \"%s\", \"content\": \"%s\", \"append\": true }",
-            config.filename, escaped);
+            "{ \"client_id\": \"%s\", \"type\": \"file\", \"filename\": \"%s\", \"content\": \"%s\", \"append\": true }",
+            CLIENT_ID ,config.filename, escaped);
     } else {
         snprintf(json_buf, sizeof(json_buf),
-            "{ \"type\": \"message\", \"content\": \"%s\" }",
-            escaped);
+            "{ \"client_id\": \"%s\", \"type\": \"message\", \"content\": \"%s\" }",
+            CLIENT_ID, escaped);
     }
 
     free(escaped); // vapautetaan muisti

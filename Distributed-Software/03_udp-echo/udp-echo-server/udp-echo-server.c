@@ -22,6 +22,7 @@ $ g++ -std=c++14 udp-echo-server.cpp -o udp-echo-server
 
 #define DEFAULT_SERVER_PORT 8080
 #define MAXSIZE 1000
+#define RESPONSE_MESSAGE_SIZE 512
 
 // typedef allows defining own type
 // delay in secs is used for artificial delay in response
@@ -32,6 +33,7 @@ typedef struct _config {
 
 // global variables
 static int sockid = -1;
+char responseMessage[RESPONSE_MESSAGE_SIZE] = "UDP Server has received data. ";
 
 // function prototypes mean order of writing functions doesn't matter
 void SaveToFile(const char* client_id, const char* filename, const char* content, int append);
@@ -150,7 +152,7 @@ int main(int argc, char *argv[]) {
     // while loop keeps the server running
     while(1) {
         // use in_buf array as memory location to receive data
-        if((n = recvfrom(sockid, in_buf, MAXSIZE-1, MSG_WAITALL, (struct sockaddr*) &clientaddr, (socklen_t*)&len)) < 0) {
+        if((n = recvfrom(sockid, in_buf, MAXSIZE-1, 0, (struct sockaddr*) &clientaddr, (socklen_t*)&len)) < 0) {
             perror("recvfrom failed");
             exit(EXIT_FAILURE);
         }
@@ -171,8 +173,8 @@ int main(int argc, char *argv[]) {
         if (config.delay_in_secs) {
             sleep(config.delay_in_secs);
         }
-        // saves text into a string with sprintf into out_buf memory
-        sprintf(out_buf, "UDP Server received data. Packet number: [%d]", msg_cnt);
+        // saves text into a string with snprintf into out_buf memory
+        snprintf(out_buf, sizeof(out_buf), "%sPacket number: [%d]", responseMessage, msg_cnt);
 
         // next step is decide flag where message goes
         sendto(
@@ -200,58 +202,73 @@ void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr) {
     cJSON* root = cJSON_Parse(in_buf);
     if (!root) {
         printf("Faulty JSON file\n");
+        snprintf(responseMessage, sizeof(responseMessage), "Faulty JSON file");
         return;
     }
 
-    cJSON* type = cJSON_GetObjectItem(root, "type");
-    cJSON* content = cJSON_GetObjectItem(root, "content");
+    cJSON* cj_type = cJSON_GetObjectItem(root, "type");
+    cJSON* cj_content = cJSON_GetObjectItem(root, "content");
+    cJSON* cj_client_id = cJSON_GetObjectItem(root, "client_id");
 
-    if (!type || !content || !cJSON_IsString(type) || !cJSON_IsString(content)) {
+    if (!cj_type || !cj_content || !cj_client_id ||
+        !cJSON_IsString(cj_type) || !cJSON_IsString(cj_content) || !cJSON_IsString(cj_client_id)) {
         printf("Missing or faulty fields in JSON\n");
+        snprintf(responseMessage, sizeof(responseMessage), "Missing or faulty fields in JSON");
         cJSON_Delete(root);
         return;
     }
 
-    // create a client_id
-    char client_id[128];
-    snprintf(client_id, sizeof(client_id), "%s_%d", inet_ntoa(clientaddr->sin_addr), clientaddr->sin_port);
+    const char* type_str = cj_type->valuestring;
+    const char* content_str = cj_content->valuestring;
+    const char* client_id_str = cj_client_id->valuestring;
 
-    if (strcmp(type->valuestring, "message") == 0) {
-        // Write into log file
+    if (strcmp(type_str, "message") == 0) {
         FILE* fp = fopen("log.txt", "a");
         if (fp) {
-
-            // add the timestamp
             time_t now = time(NULL);
-            struct tm* t = localtime(&now);
+            struct tm tm_now;
+            localtime_r(&now, &tm_now);
             char timestamp[64];
-            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &tm_now);
 
-            fprintf(fp, "[%s] [%s] %s\n", timestamp, client_id, content->valuestring);
+            fprintf(fp, "[%s] [%s] %s\n", timestamp, client_id_str, content_str);
             fclose(fp);
+
             printf("Message saved into log.txt file\n");
+            snprintf(responseMessage, sizeof(responseMessage), "Message saved into log.txt file");
         } else {
             perror("Failed writing a log file");
+            snprintf(responseMessage, sizeof(responseMessage), "Failed writing a log file");
         }
-    } else if (strcmp(type->valuestring, "file") == 0) {
-        cJSON* filename = cJSON_GetObjectItem(root, "filename");
-        cJSON* append = cJSON_GetObjectItem(root, "append");
+    } else if (strcmp(type_str, "file") == 0) {
+        cJSON* cj_filename = cJSON_GetObjectItem(root, "filename");
+        cJSON* cj_append = cJSON_GetObjectItem(root, "append");
 
-        if (!filename || !cJSON_IsString(filename)) {
-            printf("Missing or faulty file name! \n");
+        if (!cj_filename || !cJSON_IsString(cj_filename)) {
+            printf("Missing or faulty file name!\n");
+            snprintf(responseMessage, sizeof(responseMessage), "Missing or faulty file name!");
             cJSON_Delete(root);
             return;
         }
 
-        int append_mode = (append && cJSON_IsBool(append)) ? cJSON_IsTrue(append) : 1;
+        int append_mode = 1;
+        if (cj_append) {
+            if (cJSON_IsBool(cj_append)) {
+                append_mode = cJSON_IsTrue(cj_append) ? 1 : 0;
+            } else if (cJSON_IsNumber(cj_append)) {
+                append_mode = (cj_append->valueint != 0) ? 1 : 0;
+            }
+        }
 
-        SaveToFile(client_id, filename->valuestring, content->valuestring, append_mode);
+        SaveToFile(client_id_str, cj_filename->valuestring, content_str, append_mode);
     } else {
-        printf("Unknown message type: %s\n", type->valuestring);
+        printf("Unknown message type: %s\n", type_str);
+        snprintf(responseMessage, sizeof(responseMessage), "Unknown message type");
     }
 
     cJSON_Delete(root);
 }
+
 
 
 void SaveToFile(const char* client_id, const char* filename, const char* content, int append) {
@@ -264,7 +281,7 @@ void SaveToFile(const char* client_id, const char* filename, const char* content
     mkdir(folder, 0777);
 
     // Create a filepath
-    char filepath[512];
+    char filepath[300];
     snprintf(filepath, sizeof(filepath), "%s/%s", folder, filename);
 
     // Select is mode is append or clean and write new
@@ -276,6 +293,8 @@ void SaveToFile(const char* client_id, const char* filename, const char* content
         fwrite(content, 1, strlen(content), fp);
         fclose(fp);
         printf("Saved into the file: %s\n", filepath);
+        // store new responseMessage
+        snprintf(responseMessage, sizeof(responseMessage), "Saved into the file: %s\n", filepath);
     } else {
         perror("Writing file failed...\n");
     }
