@@ -79,10 +79,11 @@ To use the client, it can simply be turned on inside the command prompt (docker 
 
 -   -h = '(host's/server's) ip address to send messages'
 -   -p = '(host's/server's) port to send messages'
--   -m = 'Content of the message, max 1000 bytes. If put @ at the beginning, it is a link to text file.
+-   -d = 'Data of the message, max 1000 bytes. If put @ at the beginning, it is a link to text file.
 -   -t = 'Timeout and after time has passed assume udp packet is lost.
+-   -a = 'Append mode. "append" means yes append and "new" means replace file content.
 
 Example use (remember, you can use docker inspect <container_name> to find out an ip address of server)
 
--   ./client -h 172.20.0.2 -p 12700 -m "Halloween is the greatest celebration of year!" -t 5
--   ./client -h 172.20.0.3 -p 12700 -m "@./data/lotr-story.txt" -t 5
+-   ./client -h 172.20.0.2 -p 12700 -d "Halloween is the greatest celebration of year!" -t 5
+-   ./client -h 172.20.0.3 -p 12700 -d "@./data/lotr-story.txt" -t 5 -a "append"

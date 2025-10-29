@@ -36,7 +36,7 @@ static int sockid = -1;
 char responseMessage[RESPONSE_MESSAGE_SIZE] = "UDP Server has received data. ";
 
 // function prototypes mean order of writing functions doesn't matter
-void SaveToFile(const char* client_id, const char* filename, const char* content, int append);
+void SaveToFile(const char* client_id, const char* filename, const char* content, const char* filemode);
 void GetCmdLineOptions( int argc, char *argv[], Config_t *pconfig);
 void InterruptionHandler(int sig);
 void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr);
@@ -97,7 +97,7 @@ void InterruptionHandler(int sig) {
 
 
 int main(int argc, char *argv[]) {
-    // make a variable called config that is type of Config_t
+    // initialize a variable called config that is type of Config_t
     Config_t config;
     config.port=12700;
     config.delay_in_secs=1;
@@ -197,81 +197,117 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-
+// function that receives incoming messages from client
+// in_buf is the memory area where we store data receives
+// sockaddr_in is a struct that contains port number and ipv4 address
 void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr) {
+    // CJSON* root is the way how cjson library parses arriving json data
     cJSON* root = cJSON_Parse(in_buf);
+    // make sure json was parse-able
     if (!root) {
         printf("Faulty JSON file\n");
         snprintf(responseMessage, sizeof(responseMessage), "Faulty JSON file");
         return;
     }
 
+    // take rows from the json
     cJSON* cj_type = cJSON_GetObjectItem(root, "type");
     cJSON* cj_content = cJSON_GetObjectItem(root, "content");
     cJSON* cj_client_id = cJSON_GetObjectItem(root, "client_id");
 
+    // make sure all needed rows were inside the json
     if (!cj_type || !cj_content || !cj_client_id ||
         !cJSON_IsString(cj_type) || !cJSON_IsString(cj_content) || !cJSON_IsString(cj_client_id)) {
         printf("Missing or faulty fields in JSON\n");
         snprintf(responseMessage, sizeof(responseMessage), "Missing or faulty fields in JSON");
+        // delete root of json to avoid memory leak
         cJSON_Delete(root);
         return;
     }
 
+    // take data from json to string (char*) type
     const char* type_str = cj_type->valuestring;
     const char* content_str = cj_content->valuestring;
     const char* client_id_str = cj_client_id->valuestring;
 
+    // strcmp function from <string.h> compares if 2 words are equal or not
+    // so if type_str === "message", then we get 0
+    // and that means we do not parse a file but a message
+    // therefore. we open server's local log.txt file, and save it there
     if (strcmp(type_str, "message") == 0) {
         FILE* fp = fopen("log.txt", "a");
         if (fp) {
             time_t now = time(NULL);
             struct tm tm_now;
+            // localtime_r function takes current time, and uses  provided storage buffer
             localtime_r(&now, &tm_now);
+            // timestamp is actually array of chars aka string of C language
             char timestamp[64];
+            // strftime converts datetime into string with format specified in params
             strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &tm_now);
-
+            // standard c function to write formatted output to file or stdout
             fprintf(fp, "[%s] [%s] %s\n", timestamp, client_id_str, content_str);
+            // close file after writing
             fclose(fp);
 
             printf("Message saved into log.txt file\n");
+            // snprintf is the function, that safely moves a string into array of characters
             snprintf(responseMessage, sizeof(responseMessage), "Message saved into log.txt file");
         } else {
             perror("Failed writing a log file");
             snprintf(responseMessage, sizeof(responseMessage), "Failed writing a log file");
         }
-    } else if (strcmp(type_str, "file") == 0) {
+    } 
+    // so we are using again strcmp to compare if type given by json is 'file'
+    else if (strcmp(type_str, "file") == 0) {
+        // if it is, we will receive filename and mode of append, and use the info to create a file
         cJSON* cj_filename = cJSON_GetObjectItem(root, "filename");
         cJSON* cj_append = cJSON_GetObjectItem(root, "append");
 
+        // make sure filename is parseable
         if (!cj_filename || !cJSON_IsString(cj_filename)) {
             printf("Missing or faulty file name!\n");
+            // use again snprintf to safely store string into an array of chars
             snprintf(responseMessage, sizeof(responseMessage), "Missing or faulty file name!");
+            // delete root of json to avoid memory leak
             cJSON_Delete(root);
             return;
         }
-
-        int append_mode = 1;
+        // decide file append mode basedo n JSON value "append" = 'a' & "new" = 'w' 
+        // default is "a" if not given
+        const char* file_mode = "a"; /
         if (cj_append) {
-            if (cJSON_IsBool(cj_append)) {
-                append_mode = cJSON_IsTrue(cj_append) ? 1 : 0;
+            if (cJSON_IsString(cj_append)) {
+                const char* mode_str = cj_append->valuestring;
+                if (strcmp(mode_str, "append") == 0) {
+                    file_mode = "a";
+                } else if (strcmp(mode_str, "new") == 0) {
+                    file_mode = "w";
+                } else {
+                    fprintf(stderr, "Unknown mode string '%s', defaulting to append\n", mode_str);
+                }
+            } else if (cJSON_IsBool(cj_append)) {
+                file_mode = cJSON_IsTrue(cj_append) ? "a" : "w";
             } else if (cJSON_IsNumber(cj_append)) {
-                append_mode = (cj_append->valueint != 0) ? 1 : 0;
+                file_mode = (cj_append->valueint != 0) ? "a" : "w";
             }
         }
-
-        SaveToFile(client_id_str, cj_filename->valuestring, content_str, append_mode);
-    } else {
+        // save file using self-made SaveToFile function
+        // remember that file_mode is straight a or w
+        SaveToFile(client_id_str, cj_filename->valuestring, content_str, file_mode);
+    } 
+    // if something else than previous options happen, info client (with responseMessage) that unknown message type, not processed
+    else {
         printf("Unknown message type: %s\n", type_str);
         snprintf(responseMessage, sizeof(responseMessage), "Unknown message type");
     }
-
+    // delete root of json to avoid memory leak
     cJSON_Delete(root);
 }
 
 
-
-void SaveToFile(const char* client_id, const char* filename, const char* content, int append) {
+// save data given by client to a filepath that is individual based on client id (name)
+void SaveToFile(const char* client_id, const char* filename, const char* content, const char* filemode) {
     // Create root folder 'data' if need
     mkdir("data", 0777);
 
@@ -284,11 +320,8 @@ void SaveToFile(const char* client_id, const char* filename, const char* content
     char filepath[300];
     snprintf(filepath, sizeof(filepath), "%s/%s", folder, filename);
 
-    // Select is mode is append or clean and write new
-    const char* mode = append ? "a" : "w";
-
     // write into the file
-    FILE* fp = fopen(filepath, mode);
+    FILE* fp = fopen(filepath, filemode);
     if (fp) {
         fwrite(content, 1, strlen(content), fp);
         fclose(fp);

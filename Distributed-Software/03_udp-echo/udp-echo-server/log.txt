@@ -4,3 +4,5 @@
 [172.20.0.2_35977] [2025-10-29 15:18:54] Halloween is the greatest celebration of year!
 [2025-10-29 15:29:12] [172.20.0.2_45977] Halloween is the greatest celebration of year!
 [2025-10-29 15:38:38] [172.20.0.2_56267] Halloween is the greatest celebration of year!
+[2025-10-29 18:52:36] [client_halloweenWitch] Too many ghosts! Can't see through them!
+[2025-10-29 19:17:51] [client_halloweenWitch] Too many ghosts! Can't see through them!
