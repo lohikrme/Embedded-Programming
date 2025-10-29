@@ -275,7 +275,7 @@ void HandleIncoming(const char* in_buf, struct sockaddr_in* clientaddr) {
         }
         // decide file append mode basedo n JSON value "append" = 'a' & "new" = 'w' 
         // default is "a" if not given
-        const char* file_mode = "a"; /
+        const char* file_mode = "a";
         if (cj_append) {
             if (cJSON_IsString(cj_append)) {
                 const char* mode_str = cj_append->valuestring;

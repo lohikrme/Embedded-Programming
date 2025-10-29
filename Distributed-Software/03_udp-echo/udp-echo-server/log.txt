@@ -6,3 +6,7 @@
 [2025-10-29 15:38:38] [172.20.0.2_56267] Halloween is the greatest celebration of year!
 [2025-10-29 18:52:36] [client_halloweenWitch] Too many ghosts! Can't see through them!
 [2025-10-29 19:17:51] [client_halloweenWitch] Too many ghosts! Can't see through them!
+[2025-10-29 20:49:43] [client_halloweenWitch] Happy Halloween!
+[2025-10-29 21:05:15] [client_halloweenWitch] Happy Halloween!
+[2025-10-29 21:07:14] [client_halloweenWitch] Happy Halloween!
+[2025-10-29 21:15:41] [client_halloweenWitch] Hello world!

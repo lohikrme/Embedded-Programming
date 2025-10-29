@@ -86,4 +86,4 @@ To use the client, it can simply be turned on inside the command prompt (docker 
 Example use (remember, you can use docker inspect <container_name> to find out an ip address of server)
 
 -   ./client -h 172.20.0.2 -p 12700 -d "Halloween is the greatest celebration of year!" -t 5
--   ./client -h 172.20.0.3 -p 12700 -d "@./data/lotr-story.txt" -t 5 -a "append"
+-   ./client -h 172.20.0.3 -p 12700 -d "@./data/lotr-story.txt" -t 5 -a "new"

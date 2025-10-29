@@ -7,8 +7,8 @@
 // the condition we do is #if 0 or else
 
 // FOr UDP echo client the parameters are
-// -h = host ip address, -p = port, -m = message
-// ./udp-echo-client -h ip -p 12700 -m "message"
+// -h = host ip address, -p = port, -d = data (message or file path)
+// ./udp-echo-client -h ip -p 12700 -d "message"
 
 // IMPORTANT: optarg is a global variable used in C command prompt softwares
 
@@ -100,7 +100,7 @@ void GetCmdLineOptions( int argc, char *argv[], Config_t* pconfig) {
                 // add \0 to end of file to computers know string ends
                 pconfig->message[read] = '\0';
                 fclose(fp);
-                // deep copy a string with strdup
+                // deep copy a string with strdup - remember in main clean the memory because deep copy
                 const char* filename = filepath + 7;
                 pconfig->filename = strdup(filename);
                 pconfig->is_file = 1;
@@ -354,6 +354,9 @@ int main(int argc, char *argv[]) {
 
     // 6. Print elapsed
     printf("⏱️ Transfer duration: %.3f seconds\n", elapsed);
+
+    // clean memory area of config and return main succesfully
+    if (config.filename) free(config.filename);
     return 0;
 
 } // MAIN ENDS
