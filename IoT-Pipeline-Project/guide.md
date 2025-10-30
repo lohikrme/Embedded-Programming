@@ -43,3 +43,38 @@ To see inside mosquitto container, does mqtt receive data from nodered, use:
 -   Bucket name: iots_2025s_test_data
 -   Token:
     <p>vS0HVFGmuus2bTK1HwvYBwBiBzTyCvCaSsmzJbBTk2IZJsRiacPEScUFfUxttU1UP0jPMIV3l7jOdyGjOkggUg==<p>
+
+## Grafana
+
+### First init
+
+First time enter with username: admin password: admin
+Set new password: Koodaus1
+
+Then go to connections - select influxdb - select Query language flux because influxdb 2.0.
+
+Set url: http://iots_2025s-influxdb2-1:8086
+
+Security settings: Basic auth and With Credentialshttp://iots_2025s-influxdb2-1:8086
+
+Basic Auth details:Username and password from Influxdb
+
+Influx credentials: Other influx stuff from this readme above.
+
+Note mqtt write code:
+
+let data = msg.payload;
+const org = 'iots_2025s';
+const addr = 'TT10';
+const loc = 'kitchen';
+
+msg.payload =
+'{"address":"' + data.address +
+'","loc":"' + data.loc +
+'","device":"' + data.device +
+'","temperature":' + data.temperature.toFixed(2) +
+', "pressure":' + data.pressure.toFixed(2) +
+', "humidity":' + data.humidity.toFixed(2) + '}';
+
+msg.topic = `${org}/${addr}/${loc}`;
+return msg;

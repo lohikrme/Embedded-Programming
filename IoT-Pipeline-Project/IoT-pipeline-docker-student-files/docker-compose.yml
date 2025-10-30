@@ -169,31 +169,32 @@ services:
 
   #   restart: unless-stopped
 
-  # grafana:
-  #   # using image instead of build
-  #   # build: ./defs/grafana/
-  #   image: grafana/grafana
+  grafana:
+    # using image instead of build
+    # build: ./defs/grafana/
+    # gets newest of grafana from docker up
+    image: grafana/grafana
 
-  #   environment:
-  #     - HOSTNAME="grafana"
+    environment:
+      - HOSTNAME="grafana"
 
-  #   ports:
-  #     # The GF web server runs on port 3000
-  #     - ${GRAFANA_PORT}:${GRAFANA_PORT}
+    ports:
+      # The GF web server runs on port 3000
+      - ${GRAFANA_PORT}:${GRAFANA_PORT}
 
-  #   networks:
-  #     - iots_network
+    networks:
+      - iots_network
 
-  #   volumes:
-  #     # Mount for configuration
-  #     - iots_grafana_storage:/var/lib/grafana
+    volumes:
+      # Mount for configuration
+      - iots_grafana_storage:/var/lib/grafana
 
-  #   depends_on:
-  #     # - influxdb2
-  #     influxdb2:
-  #       condition: service_healthy
+    depends_on:
+      - influxdb2
+      # influxdb2:
+      #   condition: service_healthy
 
-  #   restart: unless-stopped
+    restart: unless-stopped
 
 networks:
   iots_network:
@@ -204,4 +205,4 @@ volumes:
   iots_mosquitto_log:
   iots_mosquitto_conf:
   iots_influxdb2_data:
-  # iots_grafana_storage:
+  iots_grafana_storage:
