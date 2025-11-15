@@ -8,6 +8,8 @@
 
 // g++ -std=c++14 -pthread -g tcp-echo-server.cpp -o server
 
+// ./server -p 8000
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -160,7 +162,7 @@ int main(int argc, char *argv[]) {
         // &new_client_socket is the reference to client socket
         int *new_client_socket = (int *) malloc(sizeof(int));
         *new_client_socket = new_socket;
-        if(pthread_create(&thread_id, NULL, HandleClientConnection, (void *) &new_client_socket) != 0) {
+        if(pthread_create(&thread_id, NULL, HandleClientConnection, (void *) new_client_socket) != 0) {
             perror("communication (worker) thread creation failed...");
             exit(EXIT_FAILURE);
         }
