@@ -16,7 +16,9 @@
 #
 # start  grafana
 # $ docker compose up --force-recreate --build grafana -d
-# ```
+#
+# start paho-mqtt
+# $ docker compose up --build -d paho-mqtt
 
 # This docker-compose file uses settings from a local .env file
 #
@@ -196,9 +198,32 @@ services:
 
     restart: unless-stopped
 
+  paho-mqtt:
+    build: ./defs/paho-mqtt/
+
+    environment:
+      - HOSTNAME="paho-mqtt"
+
+    ports:
+      # the container publishes port 3010 in case there is run an application within
+      # even though paho mqtt itself does not need this port
+      - ${PAHO_MQTT_PORT}:${PAHO_MQTT_PORT}
+
+    networks:
+      - iots_network
+
+    # if u make code on paho-mqtt folder, it will be found inside container here
+    # as mount bind shares the folder between container and host pc
+    volumes:
+      - ./paho-mqtt:/usr/src/
+
 networks:
   iots_network:
 
+# these volumes (unlike paho-mqtt volume) are named volumes, that act as a backup for data
+# usually docker creates for them a /var/lib/docker/volumes/something location
+# can be used to e.g store database content in host pc as backup
+# or just some configuration data is kept
 volumes:
   iots_node_red_data:
   iots_mosquitto_data:
