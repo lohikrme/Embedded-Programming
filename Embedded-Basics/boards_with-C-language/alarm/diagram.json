@@ -1,0 +1,146 @@
+{
+    "version": 1,
+    "author": "Anonymous maker",
+    "editor": "wokwi",
+    "parts": [
+        {
+            "type": "board-esp32-s2-devkitm-1",
+            "id": "esp",
+            "top": 0,
+            "left": 0,
+            "attrs": { "builder": "esp-idf" }
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led1",
+            "top": -22.8,
+            "left": 147.8,
+            "attrs": { "color": "red" }
+        },
+        {
+            "type": "wokwi-buzzer",
+            "id": "bz1",
+            "top": -132,
+            "left": 88.2,
+            "attrs": { "volume": "0.1" }
+        },
+        {
+            "type": "wokwi-pushbutton",
+            "id": "btn2",
+            "top": -96.6,
+            "left": -285,
+            "rotate": 90,
+            "attrs": { "color": "red", "xray": "1" }
+        },
+        {
+            "type": "wokwi-pushbutton",
+            "id": "btn1",
+            "top": -96.6,
+            "left": -237,
+            "rotate": 90,
+            "attrs": { "color": "grey", "xray": "1" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text1",
+            "top": -153.6,
+            "left": -288,
+            "attrs": { "text": "RED WARNING" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text2",
+            "top": -124.8,
+            "left": -268.8,
+            "attrs": { "text": "ON" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text3",
+            "top": -124.8,
+            "left": -220.8,
+            "attrs": { "text": "OFF" }
+        },
+        {
+            "type": "wokwi-pushbutton",
+            "id": "btn3",
+            "top": -115.8,
+            "left": -54.6,
+            "rotate": 90,
+            "attrs": { "color": "grey", "xray": "1" }
+        },
+        {
+            "type": "wokwi-pushbutton",
+            "id": "btn4",
+            "top": -115.8,
+            "left": -102.6,
+            "rotate": 90,
+            "attrs": { "color": "blue", "xray": "1" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text4",
+            "top": -172.8,
+            "left": -105.6,
+            "attrs": { "text": "BLUE WARNING" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text5",
+            "top": -144,
+            "left": -86.4,
+            "attrs": { "text": "ON" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text6",
+            "top": -144,
+            "left": -38.4,
+            "attrs": { "text": "OFF" }
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led2",
+            "top": -22.8,
+            "left": 195.8,
+            "attrs": { "color": "blue" }
+        },
+        {
+            "type": "wokwi-led",
+            "id": "led3",
+            "top": -51.6,
+            "left": 23,
+            "attrs": { "color": "green" }
+        },
+        {
+            "type": "wokwi-text",
+            "id": "text7",
+            "top": -220.8,
+            "left": -230.4,
+            "attrs": {
+                "text": "ps. green led means everything is ok and system is running"
+            }
+        }
+    ],
+    "connections": [
+        ["esp:TX", "$serialMonitor:RX", "", []],
+        ["esp:RX", "$serialMonitor:TX", "", []],
+        ["led1:C", "esp:GND.2", "black", ["v0"]],
+        ["led1:A", "esp:42", "#8f4814", ["v0"]],
+        ["bz1:1", "esp:GND.2", "black", ["v0"]],
+        ["bz1:2", "esp:45", "#8f4814", ["v0"]],
+        ["btn2:1.r", "esp:3", "#8f4814", ["v0"]],
+        ["btn2:2.r", "esp:GND.1", "black", ["v0"]],
+        ["btn1:2.r", "esp:GND.1", "black", ["v0"]],
+        ["btn1:1.r", "esp:4", "#8f4814", ["v0"]],
+        ["led3:C", "esp:GND.2", "black", ["v0"]],
+        ["led3:A", "esp:40", "green", ["v0"]],
+        ["led2:A", "esp:38", "#8f4814", ["v0"]],
+        ["led2:C", "esp:GND.2", "black", ["v0"]],
+        ["btn4:2.r", "esp:GND.1", "black", ["v0"]],
+        ["btn3:2.r", "esp:GND.1", "black", ["v0"]],
+        ["btn4:1.r", "esp:5", "#8f4814", ["v0"]],
+        ["btn3:1.r", "esp:6", "#8f4814", ["v0"]]
+    ],
+    "dependencies": {}
+}

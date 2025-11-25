@@ -105,3 +105,7 @@ Mutta lyhyet ohjeet, miten asensin kirjaston kontin sisälle, eli ensin menin /u
 -   cmake --build build/ --target install
 
 Ja sitten testasin, että asennus meni oikein ajamalla _'ls /usr/local/include/mqtt'_. Jos se listaa paljon headereita, mm. client.h, todennäköisesti asennus meni oikein.
+
+Vaihtoehtoinen tapa olisi ollut:
+
+-   _sudo apt-get install libpaho-mqtt-dev_

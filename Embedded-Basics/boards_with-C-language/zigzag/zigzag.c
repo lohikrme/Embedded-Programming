@@ -8,7 +8,9 @@
 // LCD1602 and Pi Pico!
 
 // library needed for the lcd monitor to show content
+// documentation: https://docs.arduino.cc/libraries/liquidcrystal/
 #include <LiquidCrystal.h>
+
 
 // initialize the lcd monitor
 LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
