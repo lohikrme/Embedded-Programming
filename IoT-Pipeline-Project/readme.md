@@ -104,8 +104,20 @@ Mutta lyhyet ohjeet, miten asensin kirjaston kontin sisälle, eli ensin menin /u
 -   cmake -Bbuild -H. -DPAHO_WITH_MQTT_C=ON -DPAHO_BUILD_EXAMPLES=ON
 -   cmake --build build/ --target install
 
-Ja sitten testasin, että asennus meni oikein ajamalla _'ls /usr/local/include/mqtt'_. Jos se listaa paljon headereita, mm. client.h, todennäköisesti asennus meni oikein.
+Ja sitten testasin, että asennus meni oikein ajamalla _'ls /usr/local/include/mqtt'_. Jos se listaa paljon headereita, mm. client.h, todennäköisesti asennus meni oikein. Mutta sitten pitää vielä ajaa:
 
-Vaihtoehtoinen tapa olisi ollut:
+-   ldconfig
+-   ldconfig -p | grep paho
 
--   _sudo apt-get install libpaho-mqtt-dev_
+LDconfig tarvitaan siis siihen, että linkitetään kirjastot linkerille. Linuxissa on dynaaminen linkkeri, joka etsii ne kirjastot, joita ohjelmat tarvitsevat. Idea on se, että ei tarvitse ladata kaikkia tiedostoja kerralla projektiin vaan vain tarvittavat pari funktiota. Liittyy shared library asioihin '.so' tiedostot.
+
+![alt text](image-10.png)
+![alt text](image-11.png)
+
+Vaihtoehtoinen tapa olisi ollut seuraavien dokumentaatioiden mukainen:
+
+-   https://ubuntuupdates.org/package/core/noble/universe/base/libpaho-mqtt-dev
+-   https://ubuntuupdates.org/package/core/noble/universe/base/libpaho-mqttpp-dev
+-   https://askubuntu.com/questions/148638/how-do-i-enable-the-universe-repository
+
+Todettakoon, että en saanut vaihtoehtoista tapaa toimimaan. Siinä olisi siis vain lisätty pari pakettia dockerfilen apt-install listalle, esim libpaho-mqtt3c-dev.

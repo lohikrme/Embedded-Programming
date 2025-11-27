@@ -1,6 +1,6 @@
 # version: '3.9' -- obsolte now
 
-# Start containers
+# Start containers (recommend to start one container at time, so others are not lost...)
 #
 # start Node-red
 # $ docker compose up --force-recreate --build node-red -d
@@ -17,8 +17,11 @@
 # start  grafana
 # $ docker compose up --force-recreate --build grafana -d
 #
-# start paho-mqtt
-# $ docker compose up --build -d paho-mqtt
+# start paho-mqtt-subscriber
+# $ docker compose up --build -d paho-mqtt-subscriber
+#
+# start paho-mqtt-publisher
+# $ docker compose up --build -d paho-mqtt-publisher
 
 # This docker-compose file uses settings from a local .env file
 #
@@ -119,12 +122,12 @@ services:
       # Mount for Docker API access
       - /var/run/docker.sock:/var/run/docker.sock
 
+    restart: unless-stopped
+
   #   depends_on:
   #     # - influxdb2
   #     influxdb2:
   #       condition: service_healthy
-
-  #   restart: unless-stopped
 
   # # InfluxDB2
   influxdb2:
@@ -161,6 +164,8 @@ services:
       # The API for InfluxDB2 is served on port 8086
       - ${INFLUXDB2_PORT}:${INFLUXDB2_PORT}
 
+    restart: unless-stopped
+
   #   healthcheck:
   #     # .env vars not supported (USE HARDCODED PORT HERE)
   #     # test: ["CMD", "curl", "-f", "http://localhost:${INFLUXDB2_PORT}/health"]
@@ -168,8 +173,6 @@ services:
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
-
-  #   restart: unless-stopped
 
   grafana:
     # using image instead of build
@@ -198,16 +201,17 @@ services:
 
     restart: unless-stopped
 
-  paho-mqtt:
+  # PAHO MQTT SUBSCRIBER TO LISTEN FOR MQTT MESSAGES
+  paho-mqtt-subscriber:
     build: ./defs/paho-mqtt/
 
     environment:
-      - HOSTNAME="paho-mqtt"
+      - HOSTNAME="paho-mqtt-subscriber"
 
     ports:
       # the container publishes port 3010 in case there is run an application within
       # even though paho mqtt itself does not need this port
-      - ${PAHO_MQTT_PORT}:${PAHO_MQTT_PORT}
+      - ${PAHO_MQTT_SUBSCRIBER_PORT}:${PAHO_MQTT_SUBSCRIBER_PORT}
 
     networks:
       - iots_network
@@ -215,7 +219,37 @@ services:
     # if u make code on paho-mqtt folder, it will be found inside container here
     # as mount bind shares the folder between container and host pc
     volumes:
-      - ./paho-mqtt:/usr/src/
+      - ./paho-mqtt-subs:/usr/src/
+
+    restart: unless-stopped
+
+  # PAHO MQTT PUBLISHER TO SEND MQTT MESSAGES
+  paho-mqtt-publisher:
+    build: ./defs/paho-mqtt/
+
+    environment:
+      - HOSTNAME="paho-mqtt-publisher"
+
+    ports:
+      # the container publishes port 3010 in case there is run an application within
+      # even though paho mqtt itself does not need this port
+      - ${PAHO_MQTT_PUBLISHER_PORT}:${PAHO_MQTT_PUBLISHER_PORT}
+
+    networks:
+      - iots_network
+
+    # if u make code on paho-mqtt folder, it will be found inside container here
+    # as mount bind shares the folder between container and host pc
+    volumes:
+      - ./paho-mqtt-pub:/usr/src/
+
+    restart: unless-stopped
+
+# ---------------------------------------------------------------------------
+# ****************************************************************************
+# ---------------------------------------------------------------------------
+# ****************************************************************************
+# GENERAL SETTINGS OF THE PROJECT (networks, volumes, etc)
 
 networks:
   iots_network:

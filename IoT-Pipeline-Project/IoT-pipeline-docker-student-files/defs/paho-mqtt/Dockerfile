@@ -37,6 +37,8 @@ WORKDIR /usr/src/
 # - ca-certificates: varmistaa HTTPS-yhteydet
 # - libcjson-dev: JSON-kirjasto
 # - doxygen, graphviz: dokumentaation generointiin
+# - cmake needed to build c code
+# - libc-bin needed so that ldconfig is available to update dynamic linker cache
 RUN apt-get update && apt-get -y --no-install-recommends install \
     build-essential \
     clang \
@@ -57,15 +59,10 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     ca-certificates \
     libcjson-dev \
     doxygen \
-    graphviz && \
+    graphviz \
+    cmake \
+    libc-bin && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Asennetaan cmake, jota tarvitaan Paho-kirjastojen buildaamiseen.
-RUN apt-get update && apt-get install -y cmake
-
-# Asennetaan libc-bin, jotta ldconfig on varmasti saatavilla.
-# ldconfig päivittää dynamic linker cache:n, jotta uudet kirjastot löytyvät.
-RUN apt-get update && apt-get install -y libc-bin
 
 # Tulostetaan buildin lopuksi viesti, jotta näkee että kaikki meni läpi.
 RUN echo "Build complete for C++ development environment running on ubuntu ${UBUNTU_VERSION}..."
