@@ -8,7 +8,7 @@
 
 // g++ -std=c++14 -pthread -g tcp-echo-server.cpp -o server
 
-// ./server -p 8000
+// ./server -p 8082
 
 #include <stdio.h>
 #include <ctype.h>
@@ -68,7 +68,7 @@ static void GetCmdLineOptions(int argc, char *argv[], Config_t *pconfig) {
             exit(EXIT_FAILURE);
             break;
         default:
-            fprintf(stderr,"Usage: UDPEchoServer [-p port]\n");
+            fprintf(stderr,"Usage: tcp-echo-server [-p port]\n");
         }
     }
 }
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     int len, n, new_socket, opt;
     int msg_cnt = 0;
     opt, new_socket = 1;
+    
     
     struct sockaddr_in serveraddr, clientaddr;
     GetCmdLineOptions(argc, argv, &config);
@@ -150,7 +151,6 @@ int main(int argc, char *argv[]) {
         pthread_t thread_id;
         // sizeof can receive a variable with memory area, or a type such as sockaddr_in
         socklen_t client_address_len = sizeof(struct sockaddr_in);
-        long global_message_counter;
 
         // ACCEPT CONNECTION REQUEST
         if ((new_socket=accept(sockid, (sockaddr *) &clientaddr, &client_address_len)) < 0) {
@@ -160,6 +160,7 @@ int main(int argc, char *argv[]) {
 
         // CREATE A NEW THREAD FOR COMMUNICATION
         // &new_client_socket is the reference to client socket
+        // use malloc to reserve memory slot - prevents sockets mixing together
         int *new_client_socket = (int *) malloc(sizeof(int));
         *new_client_socket = new_socket;
         if(pthread_create(&thread_id, NULL, HandleClientConnection, (void *) new_client_socket) != 0) {
@@ -170,9 +171,6 @@ int main(int argc, char *argv[]) {
         // idea is if we shut down main thread, child threads might not shut down gracefully
         // but with detach, it makes child threads to clean up themselves after they completed
         pthread_detach(thread_id);
-
-        // Here we use TotalMessageCounter to receive the amount of global messages so far sent
-        global_message_counter = TotalMessageCounter(&total_message_counter, 0);
         printf("Connection from %s:%d handled to thread\n", inet_ntoa(clientaddr.sin_addr), clientaddr.sin_port);
     }
     // close listening socket
@@ -188,36 +186,39 @@ int main(int argc, char *argv[]) {
 // FUNCTION USED BY CHILD THREAD TO HANDLE TCP CONNECTION
 // basically this can be thought as things happening inside a new thread
 void *HandleClientConnection(void *socket_desc) {
-    // place of place where int * directs us
-    // TODO: INVENT BETTER NAME
+    // place where int * directs us
     int socket_ = *(int *) socket_desc;
-    int n, loop_count = 0;
-    // leave +1 size for \0
+    int n, loop_counter = 0;
+    long total_messages_sofar;
+    // leave +1 size for '\0'
     char in_buf[MAXSIZE+1] = {0};
-    char out_buf[MAXSIZE+30] = {0};
+    char out_buf[MAXSIZE+100] = {0};
 
     // handle op until client closes connection
     // if n returns positive, there is data
     while((n=recv(socket_, in_buf, MAXSIZE, 0)) > 0) {
-        loop_count++;
-        // use self-made TotalMessageCounter() to add
-        TotalMessageCounter(&total_message_counter, 1);
+        printf("recv returned %d bytes\n", n);
+        // update thread's own loop counter
+        loop_counter++;
+        // update global total message counter, that saves all messages of all threads combined
+        total_messages_sofar = TotalMessageCounter(&total_message_counter, 1);
         in_buf[n] = '\0';
-        sprintf(out_buf, "Echo [%d]: %s\n", loop_count, in_buf);
+        // save received message to outbuf
+        sprintf(out_buf, "Echo [thread %d / global %ld]: %s\n", loop_counter, total_messages_sofar, in_buf);
         // send response to client
         send(socket_, out_buf, strlen(out_buf), 0);
+        // print what the message was
+        printf("%s", out_buf);
         // clean out_buf memory location so new stuff can be sent cleanly
-        memset(out_buf, 0, MAXSIZE);
+        memset(out_buf, 0, sizeof(out_buf));
     }
-
-
     // if n returns 0, client wants to end socket stream
     if (n == 0) {
-        printf("Client closed the connection... ending thread after %d replys\n", loop_count);
+        printf("Client closed the connection...\nEnding thread after %d replys inside the thread and %ld total messages inside the program\n", loop_counter, total_messages_sofar);
         // make sure no memory residuals left
         fflush(stdout);
     } 
-    // n values under 0 are aerror
+    // n values under 0 are error
     else if (n < 0) {
         perror("socket thread recv failed");
     }

@@ -11,11 +11,14 @@
 # start udp client (example of turning on a specific service within profile)
 # $ docker compose --profile udp up --force-recreate --build -d udp_client
 #
-# start all tcp services
-# $ docker compose --profile tcp up --force-recreate --build -d
+# start all tcp services with 3x servers
+# $ docker compose --profile tcp up --force-recreate --build -d --scale tcp_server=3
 #
 # start all services at once
 # $ docker compose --profile all up --force-recreate --build -d
+#
+# turn off all tcp containers
+# $ docker compose --profile tcp down
 
 services:
   #-----------------------------------------------------------------------------
@@ -124,8 +127,8 @@ services:
       - ${MOUNT_BIND_FOLDER_TCP_SERVER}:/usr/src/c-projects
 
     # testing the connections from HostOS
-    ports:
-      - ${TESTING_PORT_TCP_SERVER}:${SERVER_PORT_TCP}
+    expose:
+      - ${SERVER_PORT_TCP}
 
   #-----------------------------------------------------------------------------
   # TCP ECHO CLIENT
@@ -152,8 +155,27 @@ services:
     volumes:
       - ${MOUNT_BIND_FOLDER_TCP_CLIENT}:/usr/src/c-projects
 
+    expose:
+      - ${CLIENT_PORT_TCP}
+
+  #-----------------------------------------------------------------------------
+  # NGINX LOAD BALANCER
+  nginx-loadbalancer:
+    profiles: ["tcp", "all"]
+    image: nginx:alpine
+
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+
+    networks:
+      - c-lang-network
+
+    volumes:
+      - ${MOUNT_BIND_FOLDER_NGINX_LOADBALANCER}/nginx.conf:/etc/nginx/nginx.conf:ro
+
     ports:
-      - ${TESTING_PORT_TCP_CLIENT}:${CLIENT_PORT_TCP}
+      - ${NGINX_LOADBALANCER_PORT}:80
 
 networks:
   c-lang-network:

@@ -2,7 +2,7 @@
 
 // g++ -std=c++14 -pthread -g tcp-echo-client.cpp -o client
 
-// ./client -h ds-2025-student-tcp_server-1 -p 8000 -m "Hello TCP Server"
+// ./client -h ds-2025-student-tcp_server-1 -p 8082 -m "Hello TCP Server" -c 10000
 
 #include <stdio.h>
 #include <ctype.h>
@@ -157,7 +157,10 @@ int main(int argc, char *argv[]) {
         };
         if (n > 0) {
             in_buf[n] = '\0';
+            // when tcp socket sends large amount of messages, use if ((i%1000) == 999)
             if ((i%1000) == 999) {
+            // if u want to print every echo, u can use for example:
+            // if (1 == 1) {
                 printf("Server replied (%d): %s", n, in_buf);
             }
         } else {
