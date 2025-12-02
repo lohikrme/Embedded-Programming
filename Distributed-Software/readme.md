@@ -5,9 +5,9 @@ Distributed software course tries to teach how udp and tcp sockets and mqtt prot
 The tasks during the course split to next topics:
 
 1. Makefile assignment, to get basic understanding about compiling larger C++ project is done professionally.
-2. UDP Echo assignment, to teach how udp socket works. UDP sockets are not stream but packet based.
-3. TCP Echo assignment, to teach how tcp socket works. TCP sockets are stream based, so first connection but be verified.
-4. TODO: add when know
+2. UDP Echo assignment, to teach how udp socket works. UDP sockets are not stream but packet based. So udp socket simply sends a packet and hopes it finds its destination.
+3. TCP Echo assignment, to teach how tcp socket works. TCP sockets are stream based, so there is a separate thread handling incoming connection requests, and it creates a new thread, that serves a single client. The connection will be kept up until client is satisfied and shuts it down.
+4. TODO: add when know. Possibly gRPC assignemnt.
 
 ## Task 1: Makefile assignment
 
@@ -19,7 +19,7 @@ The code is very simple itself. The main point of assignment is the makefile, th
 
 Create one docker container from dockerfiles / docker-compose.yaml, with profile "makefile". It is based on "server" dockerfile, though in reality it does not need all the packets server container has, server file installs for example the make software to compile C++.
 
-## Task 2: UDP Echo
+## Task 2: UDP Echo Socket
 
 ### Basic idea and architecture
 
@@ -87,3 +87,68 @@ Example use (remember, you can use docker inspect <container_name> to find out a
 
 -   ./client -h 172.20.0.2 -p 12700 -d "Halloween is the greatest celebration of year!" -t 5
 -   ./client -h 172.20.0.3 -p 12700 -d "@./data/lotr-story.txt" -t 5 -a "new"
+
+## Task 3: TCP Echo Socket
+
+The basic idea is to create a tcp client in C++ language, that sends 10000 messages at once, 3x tcp servers in C++ language that receive the messages, and a nginx load balancer container, that delivers the messages to these 3 tcp servers. Tcp servers print how many messages received per connection thread, to allow seeing that load balancing works as supposed.
+
+### Basic usage
+
+#### Create every containers needed for project:
+
+First go into folder _'01_dockerfiles/'_, and in there run:
+
+-   docker compose --profile tcp up --force-recreate --build -d --scale tcp_server=3
+
+#### Build server source code:
+
+Every server has same mount bind folder at _'04_tcp-echo/tcp-echo-server'_, so build source code only once.
+
+-   docker exec -it <container_name> /bin/bash
+-   cd c-projects/
+-   g++ -std=c++14 -pthread -g tcp-echo-server.cpp -o server
+
+#### Tcp server run:
+
+This time docker exec -it into all 3 containers, and inside there run:
+
+-   ./server -p 8082
+
+#### Tcp client build:
+
+We have just one client. It has mount bind into folder _'04_tcp-echo/tcp-echo-client'_. So docker exec into the client container, and run next build command:
+
+-   docker exec -it ds-2025-student-tcp_client-1 /bin/bash
+-   cd c-projects/
+-   g++ -std=c++14 -pthread -g tcp-echo-client.cpp -o client
+
+#### Nginx loadbalancer
+
+Nginx container should start automatically, if u created all containers. But make sure it is running with docker ps, and then also check that nginx conf file is mount binded correctly (its content should be same as _'04_tcp-echo/nginx-loadbalancer/nginx.conf'_)
+
+-   _docker ps_.
+-   docker exec -it <container_name> /bin/sh
+-   cat etc/nginx/nginx.conf
+
+#### Debugging tips
+
+If there is problems with delivering messages to all servers, the first thing to suspect is that docker created servers with different ip address than given in nginx.conf file.
+
+You may check the ip addressed with command:
+
+-   docker network list
+-   docker inspect <network_name>
+
+To recreate a container, here is example (have a look at docker-compose.yaml for more info):
+
+-   docker compose --profile tcp up --force-recreate --build -d nginx-loadbalancer
+
+#### Send 10000 messages with tcp client
+
+Without nginx and with only 1 running tcp server send messages via:
+
+-   ./client -h ds-2025-student-tcp_server-1 -p 8082 -m "Hello TCP Server" -c 10000
+
+With nginx and 3 running tcp servers send messages via:
+
+-   ./client -h ds-2025-student-nginx-loadbalancer-1 -p 8084 -m "Hello TCP Server" -c 10000
