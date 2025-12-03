@@ -95,7 +95,3 @@ RUN echo "Build complete for client Ubuntu ${UBUNTU_VERSION}"
 #     cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR ../.. && \
 #     make -j && \
 #     make install
-
-# Some old stuff
-# EXPOSE 8080
-# CMD [ "/docker-gs-ping" ]

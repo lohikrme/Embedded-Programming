@@ -149,6 +149,6 @@ Without nginx and with only 1 running tcp server send messages via:
 
 -   ./client -h ds-2025-student-tcp_server-1 -p 8082 -m "Hello TCP Server" -c 10000
 
-With nginx and 3 running tcp servers send messages via:
+With nginx as loadbalancer and 3 running tcp servers send messages via:
 
 -   ./client -h ds-2025-student-nginx-loadbalancer-1 -p 8084 -m "Hello TCP Server" -c 10000
