@@ -53,14 +53,5 @@ typedef struct _MQTTAmbient_context {
 } MQTTAmbient_context_t;
 
 // saves default values to MQTTAmbient_context
-#define MQTTAmbient_context_initializer { \
-    .host_addr=ADDRESS,     \
-    .client_id=CLIENTID,    \
-    .topic=TOPIC,           \
-    .qos=QOS,               \
-    .publish_count=0,       \
-    .publish_count_limit=1, \
-    .publish_delay=1,       \
-    .mqtt_state=STARTING,   \
-    .op_mode=SINGLE_SHOT,   \
-    .conn_opts=MQTTAsync_connectOptions_initializer}
+// saves default values to MQTTAmbient_context
+#define MQTTAmbient_context_initializer { .host_addr=ADDRESS, .client_id=CLIENTID, .topic=TOPIC, .qos=QOS, .publish_count=0, .publish_count_limit=1, .publish_delay=1, .mqtt_state=STARTING, .op_mode=SINGLE_SHOT, .conn_opts=MQTTAsync_connectOptions_initializer }

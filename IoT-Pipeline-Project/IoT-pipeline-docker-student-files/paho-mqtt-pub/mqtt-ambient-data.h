@@ -10,8 +10,8 @@
 
 // TODO: change location and device to match other pipeline if needed
 // find out if this mqtt message should be different than the one alrdy delivered
-#define LOCATION "TT10"
-#define DEVICE "SERVER CONTAINER in Mac"
+#define LOCATION "M19"
+#define DEVICE "UFO-tech"
 
 typedef struct ambient_data {
     char    *location;

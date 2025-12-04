@@ -121,3 +121,23 @@ Vaihtoehtoinen tapa olisi ollut seuraavien dokumentaatioiden mukainen:
 -   https://askubuntu.com/questions/148638/how-do-i-enable-the-universe-repository
 
 Todettakoon, että en saanut vaihtoehtoista tapaa toimimaan. Siinä olisi siis vain lisätty pari pakettia dockerfilen apt-install listalle, esim libpaho-mqtt3c-dev.
+
+## MQTT Publisher (written with C-code)
+
+compile with:
+gcc -o mqtt-ambient-publisher mqtt-ambient-publisher.c mqtt-ambient-data.c -I/usr/local/include -L/usr/local/lib -lpaho-mqtt3as -lpthread
+
+run with (default is oneshot so 1 mqtt message):
+./mqtt-ambient-publisher -h tcp://iots_2025s-mosquitto-1:1883 -c MQTTAmbientPub
+
+if paho-mqtt is not found during run, use next command:
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+test functionality by going inside mosquitto container and run:
+mosquitto_sub -h localhost -t "Lab/DS2025s/Ambient"
+
+TODO: MAKE SUB SENTENCE SUITABLE FOR DATA SENT BY THIS PUBLISHER
+
+TODO: TRY OUT SENDING 10 MESSAGES WITH PUBLISHER
+
+debugging: do not use qos 1 or qos2, they do not work. OnDeliveryComplete never happens, so it will get stuck to waiting for publish.
