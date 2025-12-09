@@ -53,6 +53,8 @@ static inline const char *GetMQTTAmbientOpModeName(MQTTAmbient_op_mode_t op_mode
 
 
 // TODO: find out how letters of this cmd line options work
+// example: how to send messages indefinitely, every 60sec
+// select -F = forever mode, and -d 60
 void GetCmdLineOptions(int argc, char * argv[], MQTTAmbient_context_t *pMQTTAmbient_context) {
     int opt;
 
@@ -334,7 +336,10 @@ int main(int argc, char *argv[]) {
                     one_sec_delay_counter = 0;
                 }
                 // if qos is 1 or 2, publish is not enough, but must be delivery complete state
-                else if (MQTTAmbient_context.qos == 0 && (MQTTAmbient_context.mqtt_state == MESSAGE_PUBLISHED)) {
+                else if (
+                    MQTTAmbient_context.qos == 1 || 
+                    MQTTAmbient_context.qos == 2 && 
+                    (MQTTAmbient_context.mqtt_state == MESSAGE_DELIVERY_COMPLETE)) {
                     SendMessage(&MQTTAmbient_context);
                     one_sec_delay_counter = 0;
                 }

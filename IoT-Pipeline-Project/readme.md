@@ -122,22 +122,42 @@ Vaihtoehtoinen tapa olisi ollut seuraavien dokumentaatioiden mukainen:
 
 Todettakoon, että en saanut vaihtoehtoista tapaa toimimaan. Siinä olisi siis vain lisätty pari pakettia dockerfilen apt-install listalle, esim libpaho-mqtt3c-dev.
 
-## MQTT Publisher (written with C-code)
+## PAHO MQTT Publisher (written with C-code)
 
-compile with:
-gcc -o mqtt-ambient-publisher mqtt-ambient-publisher.c mqtt-ambient-data.c -I/usr/local/include -L/usr/local/lib -lpaho-mqtt3as -lpthread
+compile with next parameters:
 
-run with (default is oneshot so 1 mqtt message):
-./mqtt-ambient-publisher -h tcp://iots_2025s-mosquitto-1:1883 -c MQTTAmbientPub
+-   (gcc.....................compile pure c)
+-   (-o......................output name of software u want to run)
+-   (.c file names:..........list of files to compile)
+-   (-I/usr/local/include....add a path for headers (.h files))
+-   (-L/usr/local/lib........add a path for libraries (.so or .a files))
+-   (-lpaho-mqtt3as..........link asynchronous paho mqtt library as dynamic library)
+-   (lpthread................link posix thread library to software, paho mqtt needs multithread support)
+
+So, the overall command to compile is:
+
+-   gcc -o mqtt-ambient-publisher mqtt-ambient-publisher.c mqtt-ambient-data.c -I/usr/local/include -L/usr/local/lib -lpaho-mqtt3as -lpthread
+
+test run with default values (default is topic 'LAB/DS2025s/Ambient' oneshot so 1 mqtt message):
+
+-   ./mqtt-ambient-publisher -h tcp://iots_2025s-mosquitto-1:1883 -c MQTTAmbientPub
 
 if paho-mqtt is not found during run, use next command:
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+-   export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 test functionality by going inside mosquitto container and run:
-mosquitto_sub -h localhost -t "Lab/DS2025s/Ambient"
 
-TODO: MAKE SUB SENTENCE SUITABLE FOR DATA SENT BY THIS PUBLISHER
+-   mosquitto_sub -h localhost -t "LAB/DS2025s/Ambient"
 
-TODO: TRY OUT SENDING 10 MESSAGES WITH PUBLISHER
+Now that we have verified functionality (mosquitto was able to receive and ack), next we will publish in FOREVER mode messages every 60 second with topic we define manually:
+
+-   ./mqtt-ambient-publisher -h tcp://iots_2025s-mosquitto-1:1883 -c MQTTAmbientPub -t iots_2025/Lahti/Forest2 -F -d 60
 
 debugging: do not use qos 1 or qos2, they do not work. OnDeliveryComplete never happens, so it will get stuck to waiting for publish.
+
+Because we use iots_2025/+/+ in "topics" of telegraf, we will automatically receive these mqtt messages as long as the organization aka first param is match.
+
+In Grafana to swap between Heinola and Lahti data, we need to create separate dashboard for Lahti and separate for Heinola, and after that, create a Playlist under Dashboards Menu. Then start the playlist in "Kiosk" mode.
+
+![alt text](image-12.png)

@@ -10,9 +10,10 @@
 
 // TODO: change location and device to match other pipeline if needed
 // find out if this mqtt message should be different than the one alrdy delivered
-#define LOCATION "M19"
-#define DEVICE "UFO-tech"
+#define LOCATION "Forest1"
+#define DEVICE "Pico1"
 
+// ambient data struct, pad is a pointer towards struct like this
 typedef struct ambient_data {
     char    *location;
     char    *device;
