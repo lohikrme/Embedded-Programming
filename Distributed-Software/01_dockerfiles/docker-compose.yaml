@@ -22,6 +22,9 @@
 #
 # turn off all tcp containers
 # $ docker compose --profile tcp down
+#
+# start up grpc container
+# docker compose --profile grpc up --force-recreate --build -d
 
 services:
   #-----------------------------------------------------------------------------
@@ -179,6 +182,23 @@ services:
 
     ports:
       - ${NGINX_LOADBALANCER_PORT}:8084
+
+  grpc:
+    profiles: ["grpc", "all"]
+    build:
+      context: ./
+      dockerfile: ./docker-defs/ubuntu_server/Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION}
+    # use these if you want to run the container without a real program
+    stdin_open: true
+    tty: true
+    networks:
+      - c-lang-network
+    ports:
+      - ${GRPC_PORT}:${GRPC_PORT}
+    volumes:
+      - ${MOUNT_BIND_FOLDER_GRPC}:/usr/src/c-projects
 
 networks:
   c-lang-network:

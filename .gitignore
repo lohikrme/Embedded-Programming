@@ -1,3 +1,4 @@
 *.exe
 node_modules
 paho.mqtt.cpp/
+*.DS_Store

@@ -1,0 +1,34 @@
+syntax = "proto3";
+package addressbook;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string street = 3;
+  string city = 4;
+
+  enum EMailType {
+    PRIVATE_MAIL = 0;
+    WORK_MAIL = 1;
+  }
+  message EMailAddress {
+    string email = 1;
+    EMailType type = 2;
+  }
+  repeated EMailAddress emails = 5;
+
+  enum PhoneType {
+    MOBILE_PHONE = 0;
+    HOME_PHONE = 1;
+    WORK_PHONE = 2;
+  }
+  message PhoneNumber {
+    string number = 1;
+    PhoneType type = 2;
+  }
+  repeated PhoneNumber phones = 6;
+}
+
+message Contacts {
+  repeated Person people = 1;
+}

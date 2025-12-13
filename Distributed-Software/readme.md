@@ -152,3 +152,76 @@ Without nginx and with only 1 running tcp server send messages via:
 With nginx as loadbalancer and 3 running tcp servers send messages via:
 
 -   ./client -h ds-2025-student-nginx-loadbalancer-1 -p 8084 -m "Hello TCP Server" -c 10000
+
+## GRPC
+
+#### ProtoBuf Demo (Persons)
+
+install needed libraries:
+
+-   apt-get update
+-   apt-get install -y \
+    build-essential \
+    cmake \
+    pkg-config \
+    protobuf-compiler \
+    libprotobuf-dev \
+    libprotoc-dev \
+    protobuf-compiler-grpc \
+    libgrpc-dev \
+    libgrpc++-dev
+
+check that protoc surely is installed
+
+-   protoc --version
+
+next go to the ProtoBufDemo folder, and compile pb.h pb.cc files with the protobuf compiler:
+
+-   protoc --cpp_out=. addressbook.proto
+
+and then compile both reader and writer:
+
+-   g++ -std=c++14 -I/usr/local/include -L/usr/local/lib ReadAddressBook.cpp addressbook.pb.cc -lprotobuf -pthread -o ReadAddressBook
+-   g++ -std=c++14 -I/usr/local/include -L/usr/local/lib WriteAddressBook.cpp addressbook.pb.cc -lprotobuf -pthread -o WriteAddressBook
+
+Finally create an empty database for the protobuf to store data (without db file, it wont work, it wont be able to write data anywhere or read it from anywhere):
+
+-   touch Addressbook.db
+
+Start running the program with:
+
+-   ./WriteAddressBook Addressbook.pb
+
+![Example image, how to store data with the software](image.png)
+
+After storing enough persons into the file, use Read program:
+
+-   ./ReadAddressBook Addressbook.pb
+
+![alt text](image-1.png)
+
+#### gRPCMathService
+
+install needed libraries
+
+-   apt-get update
+-   apt-get install -y \
+    build-essential \
+    cmake \
+    pkg-config \
+    protobuf-compiler \
+    libprotobuf-dev \
+    libprotoc-dev \
+    protobuf-compiler-grpc \
+    libgrpc-dev \
+    libgrpc++-dev
+
+check grpc is sure installed
+
+next go to the gRPCMathService folder, and compile pb.h pb.cc files with the protobuf compiler:
+
+-   cd c-projects/gRPCMathService/
+
+Compile all files with the makefile:
+
+-   make

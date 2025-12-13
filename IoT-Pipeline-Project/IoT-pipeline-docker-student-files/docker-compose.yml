@@ -11,6 +11,9 @@
 # start telegraf
 # $ docker compose up --force-recreate --build telegraf -d
 #
+# restart telegraf when updating configuration
+# $ docker compose restart telegraf
+#
 # start influxdb2
 # $ docker compose up --force-recreate --build influxdb2 -d
 #
@@ -23,8 +26,8 @@
 # start paho-mqtt-publisher
 # $ docker compose up --build -d paho-mqtt-publisher
 #
-# restart telegraf when updating configuration
-# $ docker compose restart telegraf
+# start mysql
+# $ docker compose up --build -d mysql
 
 # This docker-compose file uses settings from a local .env file
 #
@@ -248,6 +251,19 @@ services:
 
     restart: unless-stopped
 
+  # MYSQL SAVES DATA SUBSCRIBED BY PAHO-MQTT-SUBSCRIBER
+  mysql:
+    image: mysql:8:0
+
+    ports:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
+
+    networks:
+      - iots_network
+
+    volumes:
+      - iots_mysql_data:/var/lib/mysql
+
 # ---------------------------------------------------------------------------
 # ****************************************************************************
 # ---------------------------------------------------------------------------
@@ -268,3 +284,4 @@ volumes:
   iots_mosquitto_conf:
   iots_influxdb2_data:
   iots_grafana_storage:
+  iots_mysql_data:
