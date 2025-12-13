@@ -161,3 +161,24 @@ Because we use iots_2025/+/+ in "topics" of telegraf, we will automatically rece
 In Grafana to swap between Heinola and Lahti data, we need to create separate dashboard for Lahti and separate for Heinola, and after that, create a Playlist under Dashboards Menu. Then start the playlist in "Kiosk" mode.
 
 ![alt text](image-12.png)
+
+## MYSQL DATABASE
+
+Paho-mqtt-subscriber will use this database to store measurements into this database.
+
+![alt text](image-13.png)
+
+There is defs/mysql/init.sql file, that is run everytime a container and its volume is remade. This allows during developing phase an easy update to the database and automatization.
+
+To update the database, one must use
+
+-   docker stop <container_name>
+-   docker rm <container_name>
+-   docker volume rm <volume_name>
+-   docker compose up --force-recreate --build -d mysql
+
+To log in to the database, run next commands:
+
+-   docker exec -it iots_2025s-mysql-1 /bin/bash
+-   mysql -u user -p
+-   Koodaus1

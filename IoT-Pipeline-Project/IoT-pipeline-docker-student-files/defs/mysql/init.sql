@@ -1,0 +1,10 @@
+use iots_2025;
+
+CREATE TABLE IF NOT EXISTS iot_data (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    location VARCHAR(100),
+    device VARCHAR(100),
+    metric_key SMALLINT NOT NULL,
+    value DOUBLE(7,3) NOT NULL,
+    measure_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);

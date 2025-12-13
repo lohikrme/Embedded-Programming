@@ -27,7 +27,14 @@
 # $ docker compose up --build -d paho-mqtt-publisher
 #
 # start mysql
-# $ docker compose up --build -d mysql
+# $ docker compose up --force-recreate --build -d mysql
+#
+# delete mysql including volume to remake data
+# be careful to not delete other volumes or pipeline breaks (DO NOT USE DOCKER COMPOSE DOWN -V)
+# instead stop the container first manually, and then run compose rm command for cont and volume:
+# $ docker stop iots_2025s-mysql-1
+# $ docker rm iots_2025s-mysql-1
+# $ docker volume rm iots_2025s_iots_mysql_data
 
 # This docker-compose file uses settings from a local .env file
 #
@@ -253,7 +260,14 @@ services:
 
   # MYSQL SAVES DATA SUBSCRIBED BY PAHO-MQTT-SUBSCRIBER
   mysql:
-    image: mysql:8:0
+    image: mysql:latest
+
+    environment:
+      # make sure this match with defs/mysql/init.db
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_USER_PASSWORD}
 
     ports:
       - ${MYSQL_PORT}:${MYSQL_PORT}
@@ -263,6 +277,8 @@ services:
 
     volumes:
       - iots_mysql_data:/var/lib/mysql
+      # run the sql file to create a datatable from defs
+      - ${MYSQL_DEF_LOCATION}/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
 # ---------------------------------------------------------------------------
 # ****************************************************************************
