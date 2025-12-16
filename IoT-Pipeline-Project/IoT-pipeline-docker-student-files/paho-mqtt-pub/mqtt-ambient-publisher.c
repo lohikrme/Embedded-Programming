@@ -1,4 +1,4 @@
-// mqtt-ambient-publisher.c
+// uses asynchronous Paho MQTT C library
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +72,12 @@ void GetCmdLineOptions(int argc, char * argv[], MQTTAmbient_context_t *pMQTTAmbi
             pMQTTAmbient_context->topic = optarg;
             break;
         case 'q':   // q = quality of service 1 or 0
-            pMQTTAmbient_context->qos = atoi(optarg);
+            int qos = atoi(optarg);
+            if (qos < 0 || qos > 2) {
+                fprintf(stderr, "Invalid QoS %d, using default %d\n", qos, QOS);
+            } else {
+                pMQTTAmbient_context->qos = qos;
+            }
             break;
         case 'S':   // S = Mode SINGLESHOT
             pMQTTAmbient_context->op_mode = SINGLE_SHOT;
