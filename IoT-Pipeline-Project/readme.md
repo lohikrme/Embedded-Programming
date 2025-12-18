@@ -182,3 +182,28 @@ To log in to the database, run next commands:
 -   docker exec -it iots_2025s-mysql-1 /bin/bash
 -   mysql -u user -p
 -   Koodaus1
+
+## PAHO MQTT SUBSCRIBER (Written in C-code)
+
+The goal here is to make a subscriber, that is able to receive suitable mqtt messages from mosquitto broker, and store its data into mysql database.
+
+Install mysql support manually (forgot to add it to dockerfile):
+
+-   apt-get install -y libmysqlclient-dev
+
+Compile (link cjson, paho.mqtt3as, mysqlclient and pthread libraries):
+
+-   docker exec -it iots_2025s-paho-mqtt-subscriber-1 /bin/bash
+-   gcc -o mqtt-subscriber mqtt-subscriber.c -I/usr/local/include -L/usr/local/lib -lcjson -lpaho-mqtt3as -lmysqlclient -lpthread
+
+Run/Start:
+
+basic way to run (receive only paho-publisher default message):
+
+-   ./mqtt-subscriber
+
+advanced way to run (receive all pipeline messages, pay attention to topic structure):
+
+-   ./mqtt-subscriber -h tcp://iots_2025s-mosquitto-1:1883 -t iots_2025/+/+/#
+
+Shut down with ctrl + c.

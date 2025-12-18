@@ -3,7 +3,7 @@
 #include <MQTTAsync.h>
 
 // Define default values for connection
-#define ADDRESS     "tcp://iots_2025s-mosquitto-1:1883"     // Broker address
+#define BROKER_ADDRESS     "tcp://iots_2025s-mosquitto-1:1883"     // Broker address
 #define CLIENTID    "MQTTAmbientPub"                        // Client ID
 #define PAYLOAD     "Testing..."                            // Client ID
 #define TOPIC       "LAB/DS2025s/Ambient"                   // Topic to publish to
@@ -54,4 +54,4 @@ typedef struct _MQTTAmbient_context {
 
 // saves default values to MQTTAmbient_context
 // saves default values to MQTTAmbient_context
-#define MQTTAmbient_context_initializer { .host_addr=ADDRESS, .client_id=CLIENTID, .topic=TOPIC, .qos=QOS, .publish_count=0, .publish_count_limit=1, .publish_delay=1, .mqtt_state=STARTING, .op_mode=SINGLE_SHOT, .conn_opts=MQTTAsync_connectOptions_initializer }
+#define MQTTAmbient_context_initializer { .host_addr=BROKER_ADDRESS, .client_id=CLIENTID, .topic=TOPIC, .qos=QOS, .publish_count=0, .publish_count_limit=1, .publish_delay=1, .mqtt_state=STARTING, .op_mode=SINGLE_SHOT, .conn_opts=MQTTAsync_connectOptions_initializer }

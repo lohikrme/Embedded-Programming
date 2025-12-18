@@ -31,7 +31,7 @@ float Rand() {
     return (float)rand()/(float)RAND_MAX;
 }
 
-AmbientData_t *MeasureAmbientData(AmbientData_t *pad, char *l, char *d) {
+AmbientData_t *MeasureAmbientData(AmbientData_t *pad, char *a, char *l, char *d) {
     // char *d = DEVICE;
     // char *l = LOCATION;
 
@@ -59,12 +59,13 @@ AmbientData_t *MeasureAmbientData(AmbientData_t *pad, char *l, char *d) {
     co2_nm1 = co2;
     mt = time(NULL);
     // pad is a pointer to ambient data struct
-    return SetAmbientData(pad, l, d, t, h, p, co2, mt);
+    return SetAmbientData(pad, a, l, d, t, h, p, co2, mt);
 }
 
 // fill the "ambientdata struct" variables with the new data, 
 // pad is the pointer to ambient data struct
-AmbientData_t *SetAmbientData(AmbientData_t *pad, char *l, char *d, float t, float h, float p, float c, time_t mt) {
+AmbientData_t *SetAmbientData(AmbientData_t *pad, char *a, char *l, char *d, float t, float h, float p, float c, time_t mt) {
+    pad->address = a;
     pad->location = l;
     pad->device = d;
     pad->temperature = t;
@@ -76,7 +77,8 @@ AmbientData_t *SetAmbientData(AmbientData_t *pad, char *l, char *d, float t, flo
 } 
 
 char *StringifyAmbientData(AmbientData_t *pad, char *buf) {
-    printf("location: %s.   device: %s.   temperature: %f.    humidity: %f.    pressure: %f.    co2: %f.    mtime: %lu.  ", 
+    printf("address: %s.   location: %s.   device: %s.   temperature: %f.    humidity: %f.    pressure: %f.    co2: %f.    mtime: %lu.  ", 
+    pad->address,
     pad->location,
     pad->device,
     pad->temperature,
@@ -84,7 +86,8 @@ char *StringifyAmbientData(AmbientData_t *pad, char *buf) {
     pad->pressure,
     pad->co2,
     pad->mtime);
-    sprintf(buf, "{\"location\": \"%s\", \"device\": \"%s\", \"temperature\": %f, \"humidity\": %f, \"pressure\": %f, \"co2\": %f, \"mtime\": %lu }",
+    sprintf(buf, "{\"address\": \"%s\", \"location\": \"%s\", \"device\": \"%s\", \"temperature\": %f, \"humidity\": %f, \"pressure\": %f, \"co2\": %f, \"mtime\": %lu }",
+    pad->address,
     pad->location,
     pad->device,
     pad->temperature,

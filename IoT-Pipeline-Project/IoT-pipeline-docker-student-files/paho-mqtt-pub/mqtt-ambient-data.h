@@ -1,4 +1,4 @@
-// MQTT-ambient.h
+// mqtt-ambient-data.h
 // definitions about mqtt message
 
 #ifndef MQTT_AMBIENT_H
@@ -12,9 +12,11 @@
 // find out if this mqtt message should be different than the one alrdy delivered
 #define LOCATION "Forest1"
 #define DEVICE "Pico1"
+#define ADDRESS "Lahti"
 
 // ambient data struct, pad is a pointer towards struct like this
 typedef struct ambient_data {
+    char    *address;
     char    *location;
     char    *device;
     float   temperature;
@@ -24,8 +26,8 @@ typedef struct ambient_data {
     time_t  mtime;
 } AmbientData_t;
 
-extern AmbientData_t* MeasureAmbientData(AmbientData_t *pad, char *l, char *d);
-extern AmbientData_t* SetAmbientData(AmbientData_t *pad, char *l, char *d, float t, float h, float p, float c, time_t mt);
+extern AmbientData_t* MeasureAmbientData(AmbientData_t *pad, char *a, char *l, char *d);
+extern AmbientData_t* SetAmbientData(AmbientData_t *pad, char *a, char *l, char *d, float t, float h, float p, float c, time_t mt);
 extern char* StringifyAmbientData(AmbientData_t *pad, char *buf);
 
 #endif

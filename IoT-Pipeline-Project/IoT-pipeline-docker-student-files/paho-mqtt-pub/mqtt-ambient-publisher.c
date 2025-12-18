@@ -183,7 +183,7 @@ void SendMessage(void *context) {
     opts.context = pMQTTAmbient_context;
 
     // Set the message content
-    MeasureAmbientData(&ad, LOCATION, DEVICE);
+    MeasureAmbientData(&ad, ADDRESS, LOCATION, DEVICE);
     pubmsg.payload = StringifyAmbientData(&ad, buf);
     pubmsg.payloadlen = (int)strlen(pubmsg.payload);
 

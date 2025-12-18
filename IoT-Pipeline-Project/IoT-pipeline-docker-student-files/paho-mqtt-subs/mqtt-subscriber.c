@@ -7,13 +7,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <MQTTAsync.h>
 #include "subscriber-config.h"
+#include <cjson/cJSON.h> // supports json files in pure C
+#include "mqtt-ambient-data.h"
+#include <mysql/mysql.h>
+
 
 // global variables
 static int subscribed = 0;
 static int finished = 0;
+static MYSQL *conn;
+
 
 
 // ---------------------------------------------------
@@ -61,7 +66,7 @@ void GetCmdLineOptions(int argc, char * const argv[], MQTTAmbient_context_t *pMQ
     int opt;
 
     // ./mqtt-subscriber -h host -t Topic -q QoS
-    // ./mqtt-subscriber -h tcp://iots_2025s-mosquitto-1:1883 -t iots_2025/Lahti/Forest2
+    // ./mqtt-subscriber -h tcp://iots_2025s-mosquitto-1:1883 -t iots_2025/+/+/#
     while((opt = getopt(argc, argv, "h:t:c:q:")) != -1)  {  
         switch(opt)  {  
         case 'h':   // h = host address e.g mosquitto address
@@ -161,8 +166,133 @@ int subscribeRequest(MQTTAmbient_context_t *ctx)
     );
 }
 
+// safe_strdup_item()
+// check if item exists, is a cJSON string and has a valuestring
+// if all conditions full, create a copy of a string with strdup, else NULL
+// the goal is AmbientData_t remains even after cJSON_Delete()
+static char* safe_strdup_item(const cJSON *item) {
+    return (item && cJSON_IsString(item) && item->valuestring)
+           ? strdup(item->valuestring)
+           : NULL;
+}
+
+// ParseAmbientData()
+// parse arriving message payload into AmbientData_t struct using cjson library
+// remember to create a new AmbientData_t struct to store data
+AmbientData_t* parseAmbientData(const char *payload, int len, AmbientData_t *out) {
+    if (!payload || !out) {
+        return NULL;
+    }
+
+    // make sure length of arriving data is okey
+    // the info of suitable length is inside mqtt-ambient-data.h
+    if (len <= 0 || len > MQTT_AMBIENT_JSON_MAX_LEN) {
+        return NULL;
+    }
+
+    // deep copy data into buffer string
+    char *buffer = (char*)malloc((size_t)len + 1);
+    if (!buffer) {
+        fprintf(stderr, "malloc failed\n");
+        return NULL;
+    }
+    memcpy(buffer, payload, (size_t)len);
+    buffer[len] = '\0';
+
+    // parse json from the buf string and delete buf
+    cJSON *json = cJSON_Parse(buffer);
+    free(buffer);
+
+    // if parsing fails, print error
+    if (!json) {
+        fprintf(stderr, "JSON parse error: %s\n", cJSON_GetErrorPtr());
+        return NULL;
+    }
+
+    // check out different fields according to AmbientData_t
+    cJSON *addr = cJSON_GetObjectItemCaseSensitive(json, "address");
+    cJSON *loc  = cJSON_GetObjectItemCaseSensitive(json, "location");
+    cJSON *dev  = cJSON_GetObjectItemCaseSensitive(json, "device");
+    cJSON *temp = cJSON_GetObjectItemCaseSensitive(json, "temperature");
+    cJSON *hum  = cJSON_GetObjectItemCaseSensitive(json, "humidity");
+    cJSON *pres = cJSON_GetObjectItemCaseSensitive(json, "pressure");
+    cJSON *co2  = cJSON_GetObjectItemCaseSensitive(json, "co2");
+    cJSON *mt   = cJSON_GetObjectItemCaseSensitive(json, "mtime");
+
+    // strings into own memory (dupataan, jotta pysyvät elossa cJSON_Delete:n jälkeen)
+    out->address  = safe_strdup_item(addr);
+    out->location = safe_strdup_item(loc);
+    out->device   = safe_strdup_item(dev);
+
+    // verify numerical values, replace with 0.0 if value not numerical
+    out->temperature = (temp && cJSON_IsNumber(temp)) ? (float)temp->valuedouble : 0.0f;
+    out->pressure    = (pres && cJSON_IsNumber(pres)) ? (float)pres->valuedouble : 0.0f;
+    out->humidity    = (hum  && cJSON_IsNumber(hum))  ? (float)hum->valuedouble  : 0.0f;
+    out->co2         = (co2  && cJSON_IsNumber(co2))  ? (float)co2->valuedouble  : 0.0f;
+
+    // verify time (käytetään havaintoaikaa, ei vastaanottoa)
+    if (mt && cJSON_IsNumber(mt)) {
+        out->mtime = (time_t)mt->valuedouble;
+    } else {
+        out->mtime = (time_t)0; // jos puuttuu
+    }
+
+    // clear memory
+    cJSON_Delete(json);
+    // return AmbientData_t with datas added
+    return out;
+}
+
+// storeInMysql()
+// this function handles storing data into mysql database
+// reason is that, the database has metric_key - value pairs, so when we receive e.g 3 variables as data
+// we store 3 rows to database, so 3 queries needed for 1 mqtt message containing full dht22 sensor data
+void storeInMysql(const AmbientData_t *ad) {
+    // initiatilize querySentences
+    char querySentenceTemperature[MQTT_AMBIENT_JSON_MAX_LEN + 30];
+    char querySentenceHumidity[MQTT_AMBIENT_JSON_MAX_LEN + 30];
+    char querySentenceAirpressure[MQTT_AMBIENT_JSON_MAX_LEN + 30];
+
+    // save suitable strings inside querySentences
+    snprintf(querySentenceTemperature, sizeof(querySentenceTemperature), 
+        "INSERT INTO iot_data (address, location, device, metric_key, value) " 
+        "VALUES ('%s', '%s', '%s', 'Temperature', %.2f)", 
+        ad->address ? ad->address : "", 
+        ad->location ? ad->location : "", 
+        ad->device ? ad->device : "", 
+        ad->temperature); 
+
+    snprintf(querySentenceHumidity, sizeof(querySentenceHumidity), 
+        "INSERT INTO iot_data (address, location, device, metric_key, value) " 
+        "VALUES ('%s', '%s', '%s', 'Humidity', %.2f)", 
+        ad->address ? ad->address : "", 
+        ad->location ? ad->location : "", 
+        ad->device ? ad->device : "", 
+        ad->humidity); 
+
+    snprintf(querySentenceAirpressure, sizeof(querySentenceAirpressure), 
+        "INSERT INTO iot_data (address, location, device, metric_key, value) " 
+        "VALUES ('%s', '%s', '%s', 'Airpressure', %.2f)", 
+        ad->address ? ad->address : "", 
+        ad->location ? ad->location : "", 
+        ad->device ? ad->device : "", 
+        ad->pressure); 
+        
+    // run all querySentences to save temp, humid and airpressure
+    if (mysql_query(conn, querySentenceTemperature) != 0) { 
+        fprintf(stderr, "querySentenceTemperature Failure: %s\n", mysql_error(conn)); 
+    } 
+    if (mysql_query(conn, querySentenceHumidity) != 0) { 
+        fprintf(stderr, "querySentenceHumidity Failure: %s\n", mysql_error(conn)); 
+    } 
+    if (mysql_query(conn, querySentenceAirpressure) != 0) { 
+        fprintf(stderr, "querySentenceAirpressure Failure: %s\n", mysql_error(conn)); 
+    } 
+}
 
 // onMessageArrived()
+// this is the function that is automatically called by  paho-mqtt when a message arrives
+// content is my own - printing data, parsing it, and storing into mysql
 int onMessageArrived(void *context,
                      char *topicName,
                      int topicLen,
@@ -193,10 +323,31 @@ int onMessageArrived(void *context,
            message->qos,
            message->retained);
 
-    // TODO:
-    // - parse payload (e.g. JSON)
-    // - store data into MySQL
-    // SetMQTTState(ctx, MESSAGE_STORED_IN_MYSQL);
+    // parse ambient data into ad struct, so it is easier to access
+    AmbientData_t ad = {0}; // alustetaan kaikki kentät nollaan/NULL:iin
+    if (!parseAmbientData((const char*)message->payload, message->payloadlen, &ad)) {
+        fprintf(stderr, "Failed to parse ambient data\n");
+    } else {
+        // Tässä vaiheessa ad sisältää duplatut stringit ja numeriarvot
+        printf("Parsed: address=%s, location=%s, device=%s, "
+               "temp=%.2f, pressure=%.2f, humidity=%.2f, co2=%.2f, mtime=%lu\n",
+               ad.address ? ad.address : "(null)",
+               ad.location ? ad.location : "(null)",
+               ad.device ? ad.device : "(null)",
+               ad.temperature, ad.pressure, ad.humidity, ad.co2,
+               (unsigned long)ad.mtime);
+
+        // Save ambient data into mysql database
+        storeInMysql(&ad);
+        
+        // update the mqtt state
+        SetMQTTState(ctx, MESSAGE_STORED_IN_MYSQL);
+    }
+
+    // Free variables stored with strdub to avoid memory leaks
+    free(ad.address);
+    free(ad.location);
+    free(ad.device);
 
     printf("-----------------------------\n");
 
@@ -205,8 +356,9 @@ int onMessageArrived(void *context,
     MQTTAsync_free(topicName);
 
     // message was succesfully processed
-    return 1;   
+    return 1;
 }
+
 
 
 // onConnect()
@@ -237,6 +389,19 @@ void onConnectFailure(void* context, MQTTAsync_failureData* response) {
 // ---------------------------------------------------------------------
 // ******* MAIN FUNCTION READS STATEMACHINE TO DETERMINE WHAT TO DO NEXT
 int main(int argc, char *argv[]) {
+
+    // init mysql database connection at the start of main
+    if ((conn = mysql_init(NULL)) == NULL)                                                             
+    {                                                                                                  
+        fprintf(stderr, "Could not init DB\n");                                                 
+        return EXIT_FAILURE;                                                                             
+    }  
+    // params: mysql init, service name in docker network, username, password, db_name, portnumber
+    if (mysql_real_connect(conn, "mysql", "user", "Koodaus1", "iots_2025", 3306, NULL, 0) == NULL)             
+    {                                                                                                  
+        fprintf(stderr, "DB Connection Error\n");                                                        
+        return EXIT_FAILURE;                                                                             
+    }  
 
     // return code variable
     int rc;
